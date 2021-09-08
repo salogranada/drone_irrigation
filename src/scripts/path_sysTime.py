@@ -4,7 +4,8 @@ import numpy as np
 import sys
 import time
 
-#Codigo de control, con recorridos en el tiempo y recorrido uniforme
+#Codigo de control, con recorridos en el tiempo y recorrido uniforme.
+#TIEMPOS REALES
 #funciona con la escena simple_test.ttt
 #simRemoteApi.start(19999)
 
@@ -38,7 +39,7 @@ def connect(port):
 #Conectarse al servidor de VREP
 clientID = connect(19999)
 
-returnCode,handle=vrep.simxGetObjectHandle(clientID,'Hexacopter',vrep.simx_opmode_blocking)
+returnCode,handle=vrep.simxGetObjectHandle(clientID,'Quadricopter_target',vrep.simx_opmode_blocking)
 Quadricopter_target = handle
 print('Quadricopter Target handle: ', Quadricopter_target)
 

@@ -4,7 +4,8 @@ import numpy as np
 import sys
 import time
 
-#Codigo de control, con recorridos en el tiempo y recorrido uniforme
+#Codigo de control, con recorridos en el tiempo y recorrido uniforme.
+#TIEMPO MACHETEADO
 #funciona con la escena simple_test.ttt
 #simRemoteApi.start(19999)
 
