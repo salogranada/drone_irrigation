@@ -4,7 +4,7 @@ import numpy as np
 import sys
 import time
 
-#Codigo de control de posicion con el quadricopter.
+#Codigo de control de posicion con el quadricopter. El tiempo es raro. Velocidad proporcional.
 #funciona con la escena simple_test.ttt
 #simRemoteApi.start(19999)
 
