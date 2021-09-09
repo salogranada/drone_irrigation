@@ -1,8 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import sim
 import numpy as np
 import sys
 import time
+import rospy
+from std_msgs.msg import Float32
 
 #Codigo de control, con recorridos en el tiempo y recorrido uniforme.
 #TIEMPOS REALES
@@ -11,7 +13,8 @@ import time
 
 global pos_x, pos_y, pos_z, theta, deltaX, deltaY
 global rho, ruta, hayRuta, tiempo
-global K_alpha, K_rho, K_beta
+global K_alpha, K_rho
+global simTime_anterior, realTime_anterior, realTime_actual, simTime_actual
 
 pos_x, pos_y, pos_z, theta, deltaX, deltaY = 0, 0, 0, 0, 0, 0
 
@@ -23,13 +26,18 @@ tiempo = [10, 10, 5, 20, 10, 5, 10, 10, 5, 20, 10, 50]
 #ruta = np.array([[-2,-2], [-2, 2], [2, 2], [2, -2], [-2,-2]])
 ruta = np.array([[-4,-4], [-4, 4], [-2, 4], [-2, -4], [0,-4], [0,4], [2,4], [2, 0], [3, 0], [3, 4], [4,4], [-4,-4]])
 
+simTime_anterior = 0
+realTime_anterior = 0
+simTime_actual = 0
+realTime_actual = 0
+
 print('Program started')
 sim.simxFinish(-1) #close all opened connections, just in case
 
 def connect(port):
     # Establece la conexion a VREP
-    # port debe coincidir con el puerto de conexión en VREP
-    # retorna el número de cliente o -1 si no puede establecer conexión
+    # port debe coincidir con el puerto de conexion en VREP
+    # retorna el numero de cliente o -1 si no puede establecer conexion
     sim.simxFinish(-1) # just in case, close all opened connections\n",
     clientID=sim.simxStart('127.0.0.1',port,True,True,2000,5) # Conectarse
     if clientID == 0: print("conectado a", port)
@@ -64,13 +72,32 @@ inicialpos = [-4, -4, 1]
 returnCodeMOV = sim.simxSetObjectPosition(clientID, Quadricopter_target,-1, inicialpos, sim.simx_opmode_blocking)
 print(returnCodeMOV)
 
+#Obtenemos el tiempo de simulacion
+def simTime_callback(msg):
+    global simTime_actual
+    simTime_actual = msg.data
+
+#Obtenemos tiempo real
+def realTime_callback(msg):
+    global realTime_actual
+    realTime_actual = msg.data
+
 def main_control():
-    global pos_x, pos_y, pos_z, theta, deltaX, deltaY, K_rho, K_alpha, tiempo, ruta
+    global pos_x, pos_y, pos_z, theta, deltaX, deltaY, K_rho, K_alpha, tiempo, ruta, simTime_actual, realTime_actual, simTime_anterior, realTime_anterior
+
+    print('Starting control node...')
+    print(' ')
+    rospy.init_node('control', anonymous=True) #Inicio nodo
+
+    rate = rospy.Rate(10) #10hz
+    rospy.Subscriber("/simulationTime", Float32, simTime_callback, tcp_nodelay=True)
+    rospy.Subscriber("/realTime", Float32, realTime_callback, tcp_nodelay=True)
+
     contador = 0
-    simTime_anterior = 0
-    realTime_anterior = 0
+
     v_x = 0
     v_y = 0
+
     #Recorremos cada punto en la ruta
     for coord in ruta:
         time_actual = tiempo[contador]*100/15.25
@@ -92,18 +119,16 @@ def main_control():
         contador = contador + 1
 
         #Calculamos tiempo en simulacion y tiempo real
-        # simTime_actual = sim.simxGetLastCmdTime(clientID)
-        # delta_realTime = sim.getSystemTimeInMs(realTime_anterior)
-        
-        # delta_Time = simTime_actual - simTime_anterior
+        delta_simTime = simTime_actual - simTime_anterior
+        delta_realTime = realTime_actual - realTime_anterior
 
-        # simTime_anterior = simTime_actual
-        # realTime_anterior = sim.getSystemTimeInMs(-1)
+        simTime_anterior = simTime_actual
+        realTime_anterior = realTime_actual
 
         #mientras no lleguemos, siga avanzando
         while rho > 0.06:
             
-            print('realTime: ' + str(round(delta_realTime/1000,4)) +'simTime: ' + str(round(delta_Time/1000,4)) + ' Tiempo: ' + str(round(tiempo[contador-2],3)) + ' EndPos: ' + str(endPos[0]) + ' ' + str(endPos[1]) + ' ' + str(round(endPos[2],3)) + ' | RHO: ' + str(round(rho,3)) )#+  ' | Pose: ' + str(round(pos_x,3)) + ', ' + str(round(pos_y,3)) + ', ' + str(round(theta,3)))#+ ' | v_omega: ' + str(round(v_omega,3)))
+            print('realTime: ' + str(round(delta_realTime/1000,4)) +'simTime: ' + str(round(delta_simTime/1000,4)) + ' Tiempo: ' + str(round(tiempo[contador-2],3)) + ' EndPos: ' + str(endPos[0]) + ' ' + str(endPos[1]) + ' ' + str(round(endPos[2],3)) + ' | RHO: ' + str(round(rho,3)) )#+  ' | Pose: ' + str(round(pos_x,3)) + ', ' + str(round(pos_y,3)) + ', ' + str(round(theta,3)))#+ ' | v_omega: ' + str(round(v_omega,3)))
             sys.stdout.write("\033[K") # Clear to the end of line
             sys.stdout.write("\033[F") # Cursor up one line
             #time.sleep(1)
