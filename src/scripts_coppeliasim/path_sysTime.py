@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import vrep
+import sim
 import numpy as np
 import sys
 import time
@@ -24,14 +24,14 @@ tiempo = [10, 10, 5, 20, 10, 5, 10, 10, 5, 20, 10, 50]
 ruta = np.array([[-4,-4], [-4, 4], [-2, 4], [-2, -4], [0,-4], [0,4], [2,4], [2, 0], [3, 0], [3, 4], [4,4], [-4,-4]])
 
 print('Program started')
-vrep.simxFinish(-1) #close all opened connections, just in case
+sim.simxFinish(-1) #close all opened connections, just in case
 
 def connect(port):
     # Establece la conexion a VREP
     # port debe coincidir con el puerto de conexión en VREP
     # retorna el número de cliente o -1 si no puede establecer conexión
-    vrep.simxFinish(-1) # just in case, close all opened connections\n",
-    clientID=vrep.simxStart('127.0.0.1',port,True,True,2000,5) # Conectarse
+    sim.simxFinish(-1) # just in case, close all opened connections\n",
+    clientID=sim.simxStart('127.0.0.1',port,True,True,2000,5) # Conectarse
     if clientID == 0: print("conectado a", port)
     else: print("No se pudo conectar")
     return clientID
@@ -39,14 +39,14 @@ def connect(port):
 #Conectarse al servidor de VREP
 clientID = connect(19999)
 
-returnCode,handle=vrep.simxGetObjectHandle(clientID,'Quadricopter_target',vrep.simx_opmode_blocking)
+returnCode,handle=sim.simxGetObjectHandle(clientID,'Quadricopter_target',sim.simx_opmode_blocking)
 Quadricopter_target = handle
 print('Quadricopter Target handle: ', Quadricopter_target)
 
 #Obtenemos la posicion del dron
 def get_position():
     global pos_x, pos_y, pos_z
-    _,pos=vrep.simxGetObjectPosition(clientID, Quadricopter_target, -1, vrep.simx_opmode_blocking)
+    _,pos=sim.simxGetObjectPosition(clientID, Quadricopter_target, -1, sim.simx_opmode_blocking)
     pos_x = pos[0]
     pos_y = pos[1]
     pos_z = pos[2]
@@ -55,19 +55,20 @@ def get_position():
 #Obtenemos la orientacion del dron
 def get_orientation():
     global theta
-    _, orientation = vrep.simxGetObjectOrientation(clientID,Quadricopter_target,-1,vrep.simx_opmode_blocking)
+    _, orientation = sim.simxGetObjectOrientation(clientID,Quadricopter_target,-1,sim.simx_opmode_blocking)
     theta = orientation[2]
     return theta
 
 #Movemos el robot a su posicion inicial
 inicialpos = [-4, -4, 1]
-returnCodeMOV = vrep.simxSetObjectPosition(clientID, Quadricopter_target,-1, inicialpos, vrep.simx_opmode_blocking)
+returnCodeMOV = sim.simxSetObjectPosition(clientID, Quadricopter_target,-1, inicialpos, sim.simx_opmode_blocking)
 print(returnCodeMOV)
 
 def main_control():
     global pos_x, pos_y, pos_z, theta, deltaX, deltaY, K_rho, K_alpha, tiempo, ruta
     contador = 0
     simTime_anterior = 0
+    realTime_anterior = 0
     v_x = 0
     v_y = 0
     #Recorremos cada punto en la ruta
@@ -90,15 +91,19 @@ def main_control():
         rho = np.sqrt(deltaX**2 + deltaY**2)
         contador = contador + 1
 
-        #Calculamos tiempo en simulacion
-        simTime_actual = vrep.simxGetLastCmdTime(clientID)
-        delta_Time = simTime_actual - simTime_anterior
-        simTime_anterior = simTime_actual
+        #Calculamos tiempo en simulacion y tiempo real
+        # simTime_actual = sim.simxGetLastCmdTime(clientID)
+        # delta_realTime = sim.getSystemTimeInMs(realTime_anterior)
+        
+        # delta_Time = simTime_actual - simTime_anterior
+
+        # simTime_anterior = simTime_actual
+        # realTime_anterior = sim.getSystemTimeInMs(-1)
 
         #mientras no lleguemos, siga avanzando
         while rho > 0.06:
             
-            print('simTime: ' + str(round(delta_Time/1000,4)) + ' Tiempo: ' + str(round(tiempo[contador-2],3)) + ' EndPos: ' + str(endPos[0]) + ' ' + str(endPos[1]) + ' ' + str(round(endPos[2],3)) + ' | RHO: ' + str(round(rho,3)) )#+  ' | Pose: ' + str(round(pos_x,3)) + ', ' + str(round(pos_y,3)) + ', ' + str(round(theta,3)))#+ ' | v_omega: ' + str(round(v_omega,3)))
+            print('realTime: ' + str(round(delta_realTime/1000,4)) +'simTime: ' + str(round(delta_Time/1000,4)) + ' Tiempo: ' + str(round(tiempo[contador-2],3)) + ' EndPos: ' + str(endPos[0]) + ' ' + str(endPos[1]) + ' ' + str(round(endPos[2],3)) + ' | RHO: ' + str(round(rho,3)) )#+  ' | Pose: ' + str(round(pos_x,3)) + ', ' + str(round(pos_y,3)) + ', ' + str(round(theta,3)))#+ ' | v_omega: ' + str(round(v_omega,3)))
             sys.stdout.write("\033[K") # Clear to the end of line
             sys.stdout.write("\033[F") # Cursor up one line
             #time.sleep(1)
@@ -116,7 +121,7 @@ def main_control():
             paso_y = v_y
             avance = [pos_x+paso_x, pos_y+paso_y, 1]
 
-            _ = vrep.simxSetObjectPosition(clientID, Quadricopter_target,-1, avance, vrep.simx_opmode_blocking)
+            _ = sim.simxSetObjectPosition(clientID, Quadricopter_target,-1, avance, sim.simx_opmode_blocking)
 
 
     print('Termine la ruta')
