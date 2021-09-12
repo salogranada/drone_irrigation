@@ -1,0 +1,81 @@
+function sysCall_init()
+    -- The child script initialization
+    turtlebotHandle=sim.getObjectAssociatedWithScript(sim.handle_self)
+    modelBase     = sim.getObjectHandle('Turtlebot2')
+    turtlebotName = sim.getObjectName(modelBase)   
+    l_motor_handle=sim.getObjectHandle('wheel_left_joint')
+    r_motor_handle=sim.getObjectHandle('wheel_right_joint')
+    rosInterfacePresent=simROS
+
+    -- Prepare the float32 publisher and subscriber (we subscribe to the topic we advertise):
+    if rosInterfacePresent then
+        pub_simTime=simROS.advertise('/simulationTime','std_msgs/Float32')
+        posTurtlebotPub = simROS.advertise('/turtlebot_position','geometry_msgs/Twist')
+        pub_orientation=simROS.advertise('/turtlebot_orientation','std_msgs/Float32')
+        subs_vel=simROS.subscribe('/turtlebot_cmdVel','geometry_msgs/Twist','subs_vel_callback')
+        subs_vel_wheels=simROS.subscribe('/turtlebot_wheelsVel','std_msgs/Float32MultiArray','wheelsVel_callback')
+    end
+    
+    theta2 = 0.0
+    theta1 = 0.0
+    theta0 = 0.0
+end
+
+function sysCall_cleanup()
+    -- Following not really needed in a simulation script (i.e. automatically shut down at simulation end):
+    if rosInterfacePresent then
+        simROS.shutdownPublisher(pub_simTime)
+        simROS.shutdownPublisher(pub_orientation)
+        simROS.shutdownSubscriber(subs_vel)
+    end
+end
+
+function wheelsVel_callback(msg)
+    speed_left = msg.data[1]
+    speed_right = msg.data[2]
+    sim.setJointTargetVelocity(l_motor_handle,speed_left)
+    sim.setJointTargetVelocity(r_motor_handle,speed_right)
+end
+
+function subs_vel_callback(msg)
+    local vel_x=msg.linear.x
+    local omega=msg.angular.z
+    sim.addStatusbarMessage('subscriber receiver following Linear Vel: '..vel_x)
+    sim.addStatusbarMessage('subscriber receiver following Rotation Vel: '..omega)
+    local wheel_radius = 0.035
+    local wheel_separation = 0.23
+    local speed_left = (vel_x - omega * wheel_separation/2)/wheel_radius
+    local speed_right = (vel_x + omega * wheel_separation/2)/wheel_radius
+    sim.setJointTargetVelocity(l_motor_handle,speed_left)
+    sim.setJointTargetVelocity(r_motor_handle,speed_right)    
+end
+
+function sysCall_actuation()
+    eulerAngles=sim.getObjectOrientation(turtlebotHandle,-1)
+    linearVelocity,angularVelocity=sim.getObjectVelocity(turtlebotHandle)
+    theta2 = theta1
+    theta1 = theta0
+    theta0 = math.abs(eulerAngles[2] - math.pi/2.0)    
+    theta = theta0
+    if theta1>theta0 and angularVelocity[3]>0 then
+        theta = -theta0
+    end
+    if theta1<theta0 and angularVelocity[3]<0 then
+        theta = -theta0
+    end
+
+    -- Send an updated simulation time message, and send the transform of the object attached to this script:
+    if rosInterfacePresent then
+        p=sim.getObjectPosition(turtlebotHandle,-1)
+        o=sim.getObjectOrientation(turtlebotHandle,-1)
+        d = {}
+        d['linear'] = {x=p[1],y=p[2],z=p[3]}
+        d['angular'] = {x=o[1],y=o[2],z=o[3]}
+        simROS.publish(posTurtlebotPub, d)
+        simROS.publish(pub_simTime,{data=sim.getSimulationTime()})                 
+        simROS.publish(pub_orientation,{data=theta})
+    end
+end
+
+
+

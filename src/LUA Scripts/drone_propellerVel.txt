@@ -1,0 +1,74 @@
+function sysCall_init()
+    -- The child script initialization
+    droneHandle=sim.getObjectAssociatedWithScript(sim.handle_self)
+    modelBase     = sim.getObjectHandle('Quadricopter')
+    droneName = sim.getObjectName(modelBase)   
+    r1_motor_handle=sim.getObjectHandle('Quadricopter_propeller_joint1')
+    l1_motor_handle=sim.getObjectHandle('Quadricopter_propeller_joint2')
+    l2_motor_handle=sim.getObjectHandle('Quadricopter_propeller_joint3')
+    r2_motor_handle=sim.getObjectHandle('Quadricopter_propeller_joint4')
+    rosInterfacePresent=simROS
+
+    -- Prepare the float32 publisher and subscriber (we subscribe to the topic we advertise):
+    if rosInterfacePresent then
+        pub_simTime=simROS.advertise('/simulationTime','std_msgs/Float32')
+        posDronePub = simROS.advertise('/drone_position','geometry_msgs/Twist')
+        pub_orientation=simROS.advertise('/drone_orientation','std_msgs/Float32')
+        subs_vel_wheels=simROS.subscribe('/drone_wheelsVel','std_msgs/Float32MultiArray','wheelsVel_callback')
+    end
+    
+    theta2 = 0.0
+    theta1 = 0.0
+    theta0 = 0.0
+end
+
+function sysCall_cleanup()
+    -- Following not really needed in a simulation script (i.e. automatically shut down at simulation end):
+    if rosInterfacePresent then
+        simROS.shutdownPublisher(pub_simTime)
+        simROS.shutdownPublisher(pub_orientation)
+        simROS.shutdownSubscriber(subs_vel_wheels)
+    end
+end
+
+function wheelsVel_callback(msg)
+    speed_left1 = msg.data[1]
+    speed_right1 = msg.data[2]
+    speed_left2 = msg.data[3]
+    speed_right2 = msg.data[4]
+    sim.setJointTargetVelocity(r1_motor_handle,speed_right1)
+    sim.setJointTargetVelocity(l1_motor_handle,speed_left1)
+    sim.setJointTargetVelocity(r2_motor_handle,speed_right2)
+    sim.setJointTargetVelocity(l2_motor_handle,speed_left2)
+end
+
+
+function sysCall_actuation()
+    eulerAngles=sim.getObjectOrientation(droneHandle,-1)
+    linearVelocity,angularVelocity=sim.getObjectVelocity(droneHandle)
+    theta2 = theta1
+    theta1 = theta0
+    theta0 = math.abs(eulerAngles[2] - math.pi/2.0)    
+    theta = theta0
+    if theta1>theta0 and angularVelocity[3]>0 then
+        theta = -theta0
+    end
+    if theta1<theta0 and angularVelocity[3]<0 then
+        theta = -theta0
+    end
+
+    -- Send an updated simulation time message, and send the transform of the object attached to this script:
+    if rosInterfacePresent then
+        p=sim.getObjectPosition(droneHandle,-1)
+        o=sim.getObjectOrientation(droneHandle,-1)
+        d = {}
+        d['linear'] = {x=p[1],y=p[2],z=p[3]}
+        d['angular'] = {x=o[1],y=o[2],z=o[3]}
+        simROS.publish(posDronePub, d)
+        simROS.publish(pub_simTime,{data=sim.getSimulationTime()})                 
+        simROS.publish(pub_orientation,{data=theta})
+    end
+end
+
+
+

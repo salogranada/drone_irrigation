@@ -7,7 +7,7 @@ import rospy
 from std_msgs.msg import Float32
 
 #Codigo de control, con recorridos en el tiempo y recorrido uniforme.
-#TIEMPOS REALES
+#TIEMPOS REALES(?)
 #funciona con la escena simple_test.ttt
 #simRemoteApi.start(19999)
 
