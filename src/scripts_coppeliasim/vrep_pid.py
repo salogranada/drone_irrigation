@@ -9,7 +9,7 @@ from tf.transformations import quaternion_from_euler
 
 #intentt de copiar el control que ya tenia el dron en vrep para adaptarlo a necesidades
 #En este momento ni se puede correr
-#funciona con la escena ros_test_newLUA.ttt
+#funciona con la escena ros_test_manualVelLUA.ttt
 
 target_pose = [0,0]
 #ruta = np.array([[-4,-4,1], [-4, 4,1], [-2, 4,1], [-2, -4,1], [0,-4,1], [0,4,1], [2,4,1], [2, 0,1], [3, 0,1], [3, 4,1], [4,4,1], [-4,-4,1]])
@@ -27,7 +27,7 @@ pAlphaE=0
 pBetaE=0
 psp2=0
 psp1=0
-
+m =0
 prevEuler=0
 
 #Subscriber positions and orientations
@@ -62,22 +62,24 @@ def matrix_callback(msg):
     global m
     m = msg.data
 
+# ----------------------------PID CONTROLLER
 def PID(endPos):
     global mm1, mm2, mm3, mm4, thrust, pos_x, pos_y, pos_z, cumul, prevEuler, pAlphaE, pBetaE, psp1, psp2,lastE,m
 #-- Vertical control:
     targetPos=endPos
     pos=[pos_x, pos_y, pos_z]
     #l=sim.getVelocity(heli)
-    e=(targetPos[3]-pos[3])
+    e=(targetPos[2]-pos[2])
     cumul=cumul+e
     pv=pParam*e
     thrust=5.335+pv+iParam*cumul+dParam*(e-lastE)#+l[3]*vParam
     lastE=e
     
     #-- Horizontal control: 
-    sp = endPos - pos
+    sp = np.array(endPos) - np.array(pos)
     #m=sim.getObjectMatrix(d,-1)
     vx={1,0,0}
+    print(m)
     vx=np.dot(m,vx)
     vy={0,1,0}
     vy=np.dot(m,vy)

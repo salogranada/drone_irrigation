@@ -6,6 +6,7 @@ import sys
 import numpy as np
 
 # PERMITE ESCRIBIRLE UNA VELOCIDAD A LOS MOTORES DEL DRON
+# Funciona con ros_test_manualVelLUA.ttt
 # TESIS
 
 global pos_x, pos_y, theta

@@ -24,7 +24,7 @@ K_rho = 0.10
 K_alpha = 0.4
 #Tiempo en el que quiero recorrer cada trayectoria en segundos [s]
 #tiempo = [100, 150, 200, 300, 100]
-tiempo = [10, 20, 30, 40, 50, 11, 201, 31, 41, 51, 61, 71]
+tiempo = [10, 20, 30, 40, 50, 11, 21, 31, 41, 51, 61, 71]
 
 #Puntos dentro de la ruta en metros [m]
 #ruta = np.array([[-2,-2], [-2, 2], [2, 2], [2, -2], [-2,-2]])

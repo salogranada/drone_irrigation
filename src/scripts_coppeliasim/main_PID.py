@@ -10,7 +10,7 @@ from tf.transformations import quaternion_from_euler
 
 #Codigo que funciona con controladores PID tuneados manualmente
 #En este momento no sirve nada no se queda estable
-#funciona con la escena ros_test_newLUA.ttt
+#funciona con la escena ros_test_manualVelLUA.ttt
 
 target_pose = [0,0]
 
