@@ -8,7 +8,8 @@ from std_msgs.msg import Float32
 
 #Codigo de control, con recorridos en el tiempo y recorrido uniforme.
 #TIEMPOS REALES(?)
-#funciona con la escena simple_test.ttt
+#funciona con la escena ros_test.ttt
+#Funcionalidad Completa
 #simRemoteApi.start(19999)
 
 global pos_x, pos_y, pos_z, theta, deltaX, deltaY
@@ -23,7 +24,7 @@ K_rho = 0.10
 K_alpha = 0.4
 #Tiempo en el que quiero recorrer cada trayectoria en segundos [s]
 #tiempo = [100, 150, 200, 300, 100]
-tiempo = [100, 200, 300, 400, 500, 110, 201, 31, 41, 51, 61, 71]
+tiempo = [10, 20, 30, 40, 50, 11, 201, 31, 41, 51, 61, 71]
 
 #Puntos dentro de la ruta en metros [m]
 #ruta = np.array([[-2,-2], [-2, 2], [2, 2], [2, -2], [-2,-2]])
@@ -111,7 +112,7 @@ def main_control():
         for coord in ruta:
             if contador < len(tiempo):
                     
-                tiempo_path = tiempo[contador]
+                tiempo_path = tiempo[contador]*100/15.25
                 coord_x = coord[0]
                 coord_y = coord[1]
                 endPos = [float(coord_x), float(coord_y), float(1) ] # [X. Y, Z]
@@ -145,8 +146,8 @@ def main_control():
                         simTime_actual = simTime
                         realTime_actual = realTime
 
-                        delta_simTime = simTime_actual - simTime_anterior
-                        delta_realTime = realTime_actual - realTime_anterior
+                        #delta_simTime = simTime_actual - simTime_anterior
+                        #delta_realTime = realTime_actual - realTime_anterior
 
                         print('realTime: ' + str(round(delta_realTime,4)) +' simTime: ' + str(round(delta_simTime,4)) + ' Tiempo: ' + str(round(tiempo[contador-2],3)) + ' EndPos: ' + str(endPos[0]) + ' ' + str(endPos[1]) + ' ' + str(round(endPos[2],3)) + ' | RHO: ' + str(round(rho,3)) )#+  ' | Pose: ' + str(round(pos_x,3)) + ', ' + str(round(pos_y,3)) + ', ' + str(round(theta,3)))#+ ' | v_omega: ' + str(round(v_omega,3)))
                         sys.stdout.write("\033[K") # Clear to the end of line
