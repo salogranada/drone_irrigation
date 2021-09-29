@@ -15,9 +15,9 @@ ang_x, ang_y, ang_z = 0,0,0
 
 rho = 0
 gamma = 0
-K_rho = 0.10
+K_rho = 0.20
 K_alpha = 0.4
-K_gamma = 0.1
+K_gamma = 0.21 #Afecta Calculo del tiempo
 
 #Tiempo en el que quiero recorrer cada trayectoria en segundos [s]
 #tiempo = [10, 20, 30, 40, 50, 11, 21, 31, 41, 51, 61, 71]
@@ -135,7 +135,7 @@ def main_control():
                 #tiempo_path = tiempo[contador]
                 #tiempo_path = (6.64417*tiempo[contador]) - 0.49887
                 #tiempo_path = 5.433045*pow(tiempo[contador],1.08946378)
-                tiempo_path = 0.0765637*pow(tiempito,3) - 1.6490187*pow(tiempito,2) + 16.23514*tiempito - 13.171232933
+                tiempo_path = (0.0765637*pow(tiempito,3) - 1.6490187*pow(tiempito,2) + 16.23514*tiempito - 13.171232933)*K_gamma
                 print(tiempo_path)
                 coord_x = coord[0]
                 coord_y = coord[1]
