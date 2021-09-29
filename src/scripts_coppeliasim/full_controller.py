@@ -36,6 +36,7 @@ realTime_actual = 0
 simTime = 0
 realTime = 0
 force = []
+velocity = 0
 
 connect = False
 
@@ -96,9 +97,13 @@ def force_callback(msg):
     global force
     force = msg.data
 
+def velocity_callback(msg):
+    global velocity
+    velocity = msg.data
+
 def main_control():
     global pos_x, pos_y, pos_z, theta, deltaX, deltaY, K_rho, K_alpha, tiempo, ruta, ang_x, ang_y, ang_z, force, gamma
-    global simTime_actual, realTime_actual, simTime_anterior, realTime_anterior, realTime, simTime, connect
+    global simTime_actual, realTime_actual, simTime_anterior, realTime_anterior, realTime, simTime, connect, velocity
 
     print('Starting control node...')
     print(' ')
@@ -113,6 +118,7 @@ def main_control():
     rospy.Subscriber("/simulationTime", Float32, simTime_callback, tcp_nodelay=True)
     rospy.Subscriber("/realTime", Float32, realTime_callback, tcp_nodelay=True)
     rospy.Subscriber("/force", Float32MultiArray, force_callback, tcp_nodelay=True)
+    rospy.Subscriber("/velocity", Float32, velocity_callback, tcp_nodelay=True)
 
     contador = 0
     v_x = 0
@@ -208,7 +214,7 @@ def main_control():
                     paso_y = v_y
 
                     #print('Pose: ' + str(round(pos_x,3)) + ' ' + str(round(pos_y,3)) + ' ' + str(round(pos_z,3)) + ' | RHO: ' + str(round(rho,3)) +' EndPos: ' + str(endPos[0]) + ' ' + str(endPos[1]) + ' ' + str(round(endPos[2],3)) +'| VEL: '+ str(round(paso_x,3)) +', ' + str(round(paso_y,3))+'| Deltas: '+ str(round(deltaX,3)) +', ' + str(round(deltaY,3)))
-                    print('real: ' + str(round(delta_realTime,4)) +' simTime: ' + str(round(delta_simTime,4)) + ' Time: ' + str(round(tiempito,3)) + ' | RHO: ' + str(round(rho,3)) +' EndPos: ' + str(endPos[0]) + ' ' + str(endPos[1]) + ' ' + str(round(endPos[2],3)) )#+  ' | Pose: ' + str(round(pos_x,3)) + ', ' + str(round(pos_y,3)) + ', ' + str(round(pos_z,3)))#+ ' | v_omega: ' + str(round(v_omega,3)))
+                    print(str(velocity) + ' | real: ' + str(round(delta_realTime,4)) +' simTime: ' + str(round(delta_simTime,4)) + ' Time: ' + str(round(tiempito,3)) + ' | RHO: ' + str(round(rho,3)) +' EndPos: ' + str(endPos[0]) + ' ' + str(endPos[1]) + ' ' + str(round(endPos[2],3)) )#+  ' | Pose: ' + str(round(pos_x,3)) + ', ' + str(round(pos_y,3)) + ', ' + str(round(pos_z,3)))#+ ' | v_omega: ' + str(round(v_omega,3)))
                     sys.stdout.write("\033[K") # Clear to the end of line
                     sys.stdout.write("\033[F") # Cursor up one line
                     #time.sleep(1)
