@@ -35,8 +35,7 @@ simTime_actual = 0
 realTime_actual = 0
 simTime = 0
 realTime = 0
-force = []
-velocity = 0
+tankMass = 0
 init = False
 
 connect = False
@@ -94,38 +93,36 @@ def realTime_callback(msg):
     global realTime
     realTime = msg.data
 
-def force_callback(msg):
-    global force
-    force = msg.data
+def tankMass_callback(msg):
+    global tankMass
+    tankMass = msg.data
 
-def velocity_callback(msg):
-    global velocity
-    velocity = msg.data
-
-def init_callback(msg):
-    global init
-    init = msg.data
+# def init_callback(msg):
+#     global init
+#     init = msg.data
 
 def main_control():
     global pos_x, pos_y, pos_z, theta, deltaX, deltaY, K_rho, K_alpha, tiempo, ruta, ang_x, ang_y, ang_z, force, gamma
-    global simTime_actual, realTime_actual, simTime_anterior, realTime_anterior, realTime, simTime, connect, velocity, init
+    global simTime_actual, realTime_actual, simTime_anterior, realTime_anterior, realTime, simTime, connect, tankMass, init
 
     print('Starting control node...')
     print(' ')
-    rospy.init_node('control', anonymous=True) #Inicio nodo
+    rospy.init_node('Control_Node', anonymous=True) #Inicio nodo
     rate = rospy.Rate(10) #10hz
 
     #Publicacion de topicos
-    pub_pose = rospy.Publisher('drone_nextPose', Float32MultiArray, queue_size=10)
-    pub_euler = rospy.Publisher('drone_nextEuler', Float32MultiArray, queue_size=10)
-    pub_irrigation_flag = rospy.Publisher('/irrigation_flag', String, queue_size=10)
+    pub_pose = rospy.Publisher('PE/Drone/drone_nextPose', Float32MultiArray, queue_size=10)
+    pub_euler = rospy.Publisher('PE/Drone/drone_nextEuler', Float32MultiArray, queue_size=10)
+    pub_tank_volume = rospy.Publisher('PE/Drone/tank_volume', String, queue_size=10)
+
+    #Estructura : [pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, tiempito]
+    pub_status = rospy.Publisher('PE/Drone/drone_status', Float32MultiArray, queue_size=10)
 
     #Subscripcion a topicos
     rospy.Subscriber("/simulationTime", Float32, simTime_callback, tcp_nodelay=True)
     rospy.Subscriber("/realTime", Float32, realTime_callback, tcp_nodelay=True)
-    rospy.Subscriber("/force", Float32MultiArray, force_callback, tcp_nodelay=True)
-    rospy.Subscriber("/velocity", Float32, velocity_callback, tcp_nodelay=True)
-    rospy.Subscriber("init_flag", Bool, init_callback, tcp_nodelay=True)
+    rospy.Subscriber("PE/Drone/currentMass", Float32, tankMass_callback, tcp_nodelay=True)
+    #rospy.Subscriber("PE/Drone/init_flag", Bool, init_callback, tcp_nodelay=True)
 
     contador = 0
     v_x = 0
@@ -138,6 +135,7 @@ def main_control():
 
     avance = Float32MultiArray()
     avance_eu = Float32MultiArray()
+    drone_status = Float32MultiArray()
     print('Estamos conectados: ', connect)
     while not rospy.is_shutdown() and connect == True and Quadricopter_base != 0:
         #Recorremos cada punto en la ruta
@@ -147,7 +145,14 @@ def main_control():
                 print('Waiting for variableMass...')
                 sys.stdout.write("\033[K") # Clear to the end of line
                 sys.stdout.write("\033[F") # Cursor up one line
-                init = True
+
+                pub_tank_volume.publish('B30L')
+                
+                if tankMass != 0:
+                    init = True 
+                else: 
+                    init = False
+                
                 if init == True:
                     tiempito = tiempo[contador]
                     #tiempo_path = tiempo[contador]
@@ -188,26 +193,10 @@ def main_control():
 
                     simTime_anterior = simTime_actual
                     realTime_anterior = realTime_actual
-                    # while abs(deltaZ) > 0.05:
-
-                    #     print(str(avance.data) + ' | Pose: ' + str(round(pos_x,3)) + ' ' + str(round(pos_y,3)) + ' ' + str(round(pos_z,3)) + ' | Gamma: ' + str(round(gamma,3)) +' EndPos: ' + str(endPos[0]) + ' ' + str(endPos[1]) + ' ' + str(round(endPos[2],3)) )
-                    #     sys.stdout.write("\033[K") # Clear to the end of line
-                    #     sys.stdout.write("\033[F") # Cursor up one line
-
-                    #     #Actualizamos posiciones
-                    #     pos_x, pos_y, pos_z = get_position()
-
-                    #     deltaZ = endPos[2] - pos_z
-
-                    #     gamma = pos_z+deltaZ*0.4
-
-                    #     avance.data = [endPos[0], endPos[1], gamma]
-
-                    #     pub_pose.publish(avance)
 
                     #mientras no lleguemos, siga avanzando
                     while rho > 0.3  and connect == True:
-                        pub_irrigation_flag.publish('B30L')
+                        pub_tank_volume.publish('B30L')
                         simTime_actual = simTime
                         realTime_actual = realTime
 
@@ -227,7 +216,7 @@ def main_control():
                         paso_y = v_y
 
                         #print('Pose: ' + str(round(pos_x,3)) + ' ' + str(round(pos_y,3)) + ' ' + str(round(pos_z,3)) + ' | RHO: ' + str(round(rho,3)) +' EndPos: ' + str(endPos[0]) + ' ' + str(endPos[1]) + ' ' + str(round(endPos[2],3)) +'| VEL: '+ str(round(paso_x,3)) +', ' + str(round(paso_y,3))+'| Deltas: '+ str(round(deltaX,3)) +', ' + str(round(deltaY,3)))
-                        print(str(velocity) + ' | real: ' + str(round(delta_realTime,4)) +' simTime: ' + str(round(delta_simTime,4)) + ' Time: ' + str(round(tiempito,3)) + ' | RHO: ' + str(round(rho,3)) +' EndPos: ' + str(endPos[0]) + ' ' + str(endPos[1]) + ' ' + str(round(endPos[2],3)) )#+  ' | Pose: ' + str(round(pos_x,3)) + ', ' + str(round(pos_y,3)) + ', ' + str(round(pos_z,3)))#+ ' | v_omega: ' + str(round(v_omega,3)))
+                        print('realTime: ' + str(round(delta_realTime,4)) +' simTime: ' + str(round(delta_simTime,4)) + ' Time: ' + str(round(tiempito,3)))
                         sys.stdout.write("\033[K") # Clear to the end of line
                         sys.stdout.write("\033[F") # Cursor up one line
                         #time.sleep(1)
@@ -238,11 +227,14 @@ def main_control():
 
                         pub_pose.publish(avance)
                         pub_euler.publish(avance_eu)
+
+                        drone_status.data = [pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, tiempito, endPos[0], endPos[1], endPos[2]]
+                        pub_status.publish(drone_status)
                         #_ = sim.simxSetObjectPosition(clientID, Quadricopter_base,-1, avance_2, sim.simx_opmode_blocking)
 
                     delta_simTime = simTime_actual - simTime_anterior
                     delta_realTime = realTime_actual - realTime_anterior
-                    print('real: ' + str(round(delta_realTime,4)) +' simTime: ' + str(round(delta_simTime,4)) + ' Time: ' + str(round(tiempito,3)) + ' | RHO: ' + str(round(rho,3)) +' EndPos: ' + str(endPos[0]) + ' ' + str(endPos[1]) + ' ' + str(round(endPos[2],3)) )#+  ' | Pose: ' + str(round(pos_x,3)) + ', ' + str(round(pos_y,3)) + ', ' + str(round(pos_z,3)))#+ ' | v_omega: ' + str(round(v_omega,3)))
+                    print('real: ' + str(round(delta_realTime,4)) +' simTime: ' + str(round(delta_simTime,4)) + ' Time: ' + str(round(tiempito,3)))
                     #sys.stdout.write("\033[K") # Clear to the end of line
                     #sys.stdout.write("\033[F") # Cursor up one line
 
