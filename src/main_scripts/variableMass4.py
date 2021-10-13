@@ -47,9 +47,9 @@ class variableMass(object):
         self.simulationTime = 0
         self.simTimeIrrigation0 = 0 #when the irrigation begins
         self.simulationTime_sub = rospy.Subscriber('/simulationTime',Float32,self.callback_simulationTime)
-        self.pub = rospy.Publisher('PE/Drone/currentMass', Float32,queue_size=50)
+        self.pub = rospy.Publisher('/currentMass', Float32,queue_size=50)
         self.irrigationFlag = 'initial'
-        self.irrigationFlag_sub = rospy.Subscriber('PE/Drone/tank_volume', String, self.callback_activation)
+        self.irrigationFlag_sub = rospy.Subscriber('/PE/Drone/tank_volume', String, self.callback_activation)
         self.matrixValues = np.zeros((2,3))
         print(self.matrixValues, "Esta es la matriz cuando inicia")
         self.h = 1

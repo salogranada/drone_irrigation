@@ -23,14 +23,12 @@ def status_callback(msg):
 	rho =  msg.data[6]
 	pathTime = msg.data[7]
 	endPos_x, endPos_y, endPos_z = msg.data[8], msg.data[9], msg.data[10]
-	
-def simTime_callback(msg):
-    global simTime
-    simTime = msg.data
 
-def realTime_callback(msg):
-    global realTime
-    realTime = msg.data
+#Estructura : [delta_realTime, delta_simTime]
+def times_callback(msg):
+	global simTime, realTime
+	realTime = msg.data[0]
+	simTime = msg.data[1]
 
 def force_callback(msg):
     global force
@@ -62,14 +60,15 @@ def info_status():
 	rospy.Subscriber("/force", Float32, force_callback, tcp_nodelay=True)
 	rospy.Subscriber("/torque", Float32, torque_callback, tcp_nodelay=True)
 	rospy.Subscriber('/velocity', Float32, velocity_callback, tcp_nodelay=True)
-	rospy.Subscriber("/simulationTime", Float32, simTime_callback, tcp_nodelay=True)
-	rospy.Subscriber("/realTime", Float32, realTime_callback, tcp_nodelay=True)
-	rospy.Subscriber("PE/Drone/currentMass", Float32, tankMass_callback, tcp_nodelay=True)
-	rospy.Subscriber('PE/Drone/tank_volume', String, tankVolume_callback)
+	#rospy.Subscriber("/simulationTime", Float32, simTime_callback, tcp_nodelay=True)
+	#rospy.Subscriber("/realTime", Float32, realTime_callback, tcp_nodelay=True)
+	rospy.Subscriber("/currentMass", Float32, tankMass_callback, tcp_nodelay=True)
+	rospy.Subscriber('/PE/Drone/tank_volume', String, tankVolume_callback)
 
 	#Estructura : [pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, pathTime]
 	rospy.Subscriber("PE/Drone/drone_status", Float32MultiArray, status_callback, tcp_nodelay=True)
-	
+	#Estructura : [delta_realTime, delta_simTime]
+	rospy.Subscriber("PE/Drone/controller_time", Float32MultiArray, times_callback, tcp_nodelay=True)
 	rate = rospy.Rate(10)
 
 
