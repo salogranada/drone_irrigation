@@ -9,7 +9,7 @@
   ```
 
   ```bash
-  git clone https://github.com/robocol-rem-u/motion_control.git
+  git clone https://github.com/salogranada/drone_irrigation_vrep.git
   ```
 
 2. Move to the root of the workspace.
