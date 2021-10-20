@@ -2,31 +2,36 @@
 import rospy
 import sys
 import numpy as np
-import sim
 from std_msgs.msg import Float32MultiArray, Float32, String, Bool
 
-#intento de no usar el target obj de la simulacion si no coordenadas enviadas por ros
-#incluye control para Z (altura)
-#funciona con la escena ros_drone_update.ttt
+#Busca controlar desde este script el desplazamiento horizontal. Antes se manejaba desde VREP.
+#Funciona. Hay que hacer el recorrido mas suave.
+#funciona con la escena external_control.ttt
 
 pos_x, pos_y, pos_z, theta, deltaX, deltaY = 0, 0, 0, 0, 0, 0
-
 ang_x, ang_y, ang_z = 0,0,0
 
+masa = 26
 rho = 0
 gamma = 0
 K_rho = 0.20
-K_alpha = 0.4
 K_gamma = 0.21 #Afecta Calculo del tiempo
+
+kp_r, kp_p = 0.5,0.8 #Outer Loop Gains
+
+pParam, iParam, dParam, vParam = 32,0,0.005,-2
+pRoll, iRoll, dRoll = 2,0,0.005
+pPitch, iPitch, dPitch = 128,0,0.005
+pYaw, iYaw, dYaw = 128,0,0.05
 
 #Tiempo en el que quiero recorrer cada trayectoria en segundos [s]
 #tiempo = [10, 20, 30, 40, 50, 11, 21, 31, 41, 51, 61, 71]
-tiempo = [20, 20]
+tiempo = [20, 20, 20, 20]
 
 #Puntos dentro de la ruta en metros [m]#tiempo = [100, 150, 200, 300, 100]
 #ruta = np.array([[-4,-4], [-4, 4], [-2, 4], [-2, -4], [0,-4], [0,4], [2,4], [2, 0], [3, 0], [3, 4], [4,4], [-4,-4]])
-ruta = [[-4,-4,1], [-4, 4,1], [1, 4,1], [-2, -4,1], [0,-4,2], [0,4,1], [2,4,1], [2, 0,1], [3, 0,1], [3, 4,1], [4,4,1], [-4,-4,1]]
-#ruta = [[-4,-4,1], [-4, 4,1], [-4, -4,1]]
+#ruta = [[-4,-4,1], [-4, 0,1], [-4, -4,1], [-2, -4,1], [0,-4,2], [0,4,1], [2,4,1], [2, 0,1], [3, 0,1], [3, 4,1], [4,4,1], [-4,-4,1]]
+ruta = [[0,0,2], [2,0,2], [0,0,2], [0,2,2], [0,-4,2], [0,4,1], [2,4,1], [2, 0,1], [3, 0,1], [3, 4,1], [4,4,1], [-4,-4,1]]
 
 
 simTime_anterior = 0
@@ -41,46 +46,23 @@ init = False
 connect = False
 
 print('Program started')
-sim.simxFinish(-1) #close all opened connections, just in case
-
-def connect(port):
-    # Establece la conexion a VREP
-    # port debe coincidir con el puerto de conexion en VREP
-    # retorna el numero de cliente o -1 si no puede establecer conexion
-    global connect
-    sim.simxFinish(-1) # just in case, close all opened connections\n",
-    clientID=sim.simxStart('127.0.0.1',port,True,True,2000,5) # Conectarse
-    if clientID == 0: 
-        print("Conectado a: ", port)
-        connect = True
-    else: 
-        connect = False
-        print("No se pudo conectar")
-    return clientID
-
-#Conectarse al servidor de VREP
-clientID = connect(19999)
-
-returnCode,handle=sim.simxGetObjectHandle(clientID,'Quadcopter_base',sim.simx_opmode_blocking)
-Quadricopter_base = handle
-print('Quadricopter Target handle: ', Quadricopter_base)
 
 #Obtenemos la posicion del dron
-def get_position():
+def dronePose_callback(msg):
     global pos_x, pos_y, pos_z
-    _,pos=sim.simxGetObjectPosition(clientID, Quadricopter_base, -1, sim.simx_opmode_blocking)
-    pos_x = pos[0]
-    pos_y = pos[1]
-    pos_z = pos[2]
+    #_,pos=sim.simxGetObjectPosition(clientID, Quadricopter_base, -1, sim.simx_opmode_blocking)
+    pos_x = msg.data[0]
+    pos_y = msg.data[1]
+    pos_z = msg.data[2]
     return pos_x, pos_y, pos_z
 
 #Obtenemos la orientacion del dron
-def get_orientation():
+def droneOrientation_callback(msg):
     global ang_x, ang_y, ang_z
-    _, orientation = sim.simxGetObjectOrientation(clientID,Quadricopter_base,-1,sim.simx_opmode_blocking)
-    ang_x = orientation[0]
-    ang_y = orientation[1]
-    ang_z = orientation[2]
+    #_, orientation = sim.simxGetObjectOrientation(clientID,Quadricopter_base,-1,sim.simx_opmode_blocking)
+    ang_x = msg.data[0]
+    ang_y = msg.data[1]
+    ang_z = msg.data[2]
     return ang_x, ang_y, ang_z
 
 #Obtenemos el tiempo de simulacion
@@ -93,13 +75,15 @@ def realTime_callback(msg):
     global realTime
     realTime = msg.data
 
+#Obtenemos el peso del tanque
 def tankMass_callback(msg):
     global tankMass
     tankMass = msg.data
 
+#Funcion principal donde corren todos los controladores
 def main_control():
-    global pos_x, pos_y, pos_z, theta, deltaX, deltaY, K_rho, K_alpha, tiempo, ruta, ang_x, ang_y, ang_z, force, gamma
-    global simTime_actual, realTime_actual, simTime_anterior, realTime_anterior, realTime, simTime, connect, tankMass, init
+    global pos_x, pos_y, pos_z, theta, deltaX, deltaY, K_rho, tiempo, ruta, ang_x, ang_y, ang_z, gamma
+    global simTime_actual, realTime_actual, simTime_anterior, realTime_anterior, realTime, simTime, tankMass, init
 
     print('Starting control node...')
     print(' ')
@@ -107,11 +91,10 @@ def main_control():
     rate = rospy.Rate(10) #10hz
 
     #Publicacion de topicos
-    pub_pose = rospy.Publisher('/drone_nextPose', Float32MultiArray, queue_size=10)
-    pub_euler = rospy.Publisher('/drone_nextEuler', Float32MultiArray, queue_size=10)
     pub_tank_volume = rospy.Publisher('/PE/Drone/tank_volume', String, queue_size=10)
+    pub_axisforces = rospy.Publisher('/drone_axisForces', Float32MultiArray, queue_size=10)
 
-    #Estructura : [pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, tiempito]
+    #Estructura : [rho, tiempito, Endpos]
     pub_status = rospy.Publisher('PE/Drone/drone_status', Float32MultiArray, queue_size=10)
     pub_time = rospy.Publisher('PE/Drone/controller_time', Float32MultiArray, queue_size=10)
 
@@ -119,24 +102,23 @@ def main_control():
     rospy.Subscriber("/simulationTime", Float32, simTime_callback, tcp_nodelay=True)
     rospy.Subscriber("/realTime", Float32, realTime_callback, tcp_nodelay=True)
     rospy.Subscriber("/currentMass", Float32, tankMass_callback, tcp_nodelay=True)
+    rospy.Subscriber("/drone_pose", Float32MultiArray, dronePose_callback, tcp_nodelay=True)
+    rospy.Subscriber("/drone_orientation", Float32MultiArray, droneOrientation_callback, tcp_nodelay=True)
     #rospy.Subscriber("PE/Drone/init_flag", Bool, init_callback, tcp_nodelay=True)
 
     contador = 0
-    v_x = 0
-    v_y = 0
-    v_z = 0
-    paso_x = 0
-    paso_y = 0
+    v_x, v_y = 0,0
     delta_realTime = 0
     delta_simTime = 0
 
-    avance = Float32MultiArray()
-    avance_eu = Float32MultiArray()
+    cumul, cumulRoll, cumulPitch, cumulYaw, lastE, lastERoll, lastEPitch, lastEYaw = 0,0,0,0,0,0,0,0
+    thrust, roll, pitch, yaw = 0,0,0,0
+
     drone_status = Float32MultiArray()
     controller_time = Float32MultiArray()
+    axisForces = Float32MultiArray()
 
-    print('Estamos conectados: ', connect)
-    while not rospy.is_shutdown() and connect == True and Quadricopter_base != 0:
+    while not rospy.is_shutdown():
         #Recorremos cada punto en la ruta
         
         for coord in ruta:
@@ -151,27 +133,49 @@ def main_control():
                     init = True 
                 else: 
                     init = False
-                #init = True
+                init = True
                 if init == True:
                     tiempito = tiempo[contador]
                     #tiempo_path = tiempo[contador]
                     #tiempo_path = (6.64417*tiempo[contador]) - 0.49887
                     #tiempo_path = 5.433045*pow(tiempo[contador],1.08946378)
                     tiempo_path = (0.0765637*pow(tiempito,3) - 1.6490187*pow(tiempito,2) + 16.23514*tiempito - 13.171232933)*K_gamma
-                    print('tiempo path: ', tiempo_path)
+                    #print('tiempo path: ', tiempo_path)
                     coord_x = coord[0]
                     coord_y = coord[1]
                     coord_z = coord[2]
+                    endPos_theta = np.arctan2(float(coord_y), float(coord_x))
                     endPos = [float(coord_x), float(coord_y), float(coord_z) ] # [X. Y, Z]
 
-                    pos_x, pos_y, pos_z = get_position()
-                    ang_x, ang_y, ang_z = get_orientation()
-
-                    deltaX = endPos[0] - pos_x
-                    deltaY = endPos[1] - pos_y
+                    deltaX = endPos[0] - pos_x #Distancia que me falta en X
+                    deltaY = endPos[1] - pos_y #Distancia que me falta en Y
                     deltaZ = endPos[2] - pos_z
 
                     rho = np.sqrt(deltaX**2 + deltaY**2)
+
+                    #ponemos al dron a volar antes de iniciar el recorrido
+                    while deltaZ > 0.2:
+                        deltaX = endPos[0] - pos_x #Distancia que me falta en X
+                        deltaY = endPos[1] - pos_y #Distancia que me falta en Y
+                        deltaZ = endPos[2] - pos_z
+
+                        rho = np.sqrt(deltaX**2 + deltaY**2)
+
+                        # -- Vertical control:
+                        cumul=cumul+deltaZ
+                        thrust = masa * (pParam*deltaZ + iParam*cumul + dParam*(deltaZ-lastE))
+                        lastE=deltaZ
+
+                        axisForces.data = [thrust, 0, 0, 0]
+                        drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2]]
+
+                        pub_axisforces.publish(axisForces)
+                        pub_status.publish(drone_status)
+
+                        print('Ajustando altura: '+str(thrust) + '  Delta Z: ' + str(deltaZ))
+                        sys.stdout.write("\033[K") # Clear to the end of line
+                        sys.stdout.write("\033[F") # Cursor up one line
+
                     contador = contador + 1
 
                     #Calculamos tiempo en simulacion y tiempo real
@@ -188,12 +192,9 @@ def main_control():
                     #Calculamos velocidad constante dependiendo de la direccion
                     v_x = deltaX/tiempo_path    
                     v_y = deltaY/tiempo_path
-                    v_z = deltaY/tiempo_path
-
-                    print('Velocidades: ', v_x, v_y)
 
                     #mientras no lleguemos, siga avanzando
-                    while rho > 0.3  and connect == True:
+                    while rho > 0.1:
                         pub_tank_volume.publish('B30L')
                         simTime_actual = simTime
                         realTime_actual = realTime
@@ -201,47 +202,60 @@ def main_control():
                         delta_simTime = simTime_actual - simTime_anterior
                         delta_realTime = realTime_actual - realTime_anterior
 
-                        #Actualizamos posiciones
-                        pos_x, pos_y, pos_z = get_position()
-                        ang_x, ang_y, ang_z = get_orientation()
-
-                        deltaX = endPos[0] - pos_x #distancias
-                        deltaY = endPos[1] - pos_y
+                        deltaX = endPos[0] - pos_x #Distancia que me falta en X
+                        deltaY = endPos[1] - pos_y #Distancia que me falta en Y
+                        deltaZ = endPos[2] - pos_z
 
                         rho = np.sqrt(deltaX**2 + deltaY**2)
-                            
-                        paso_x = v_x*100
-                        paso_y = v_y*100
 
-                        #avance_2 = [pos_x+paso_x, pos_y+paso_y, 0.5]
-                        avance.data = [pos_x+paso_x, pos_y+paso_y, endPos[2]]
-                        avance_eu.data = [ang_x, ang_y, ang_z]
-                        drone_status.data = [pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, tiempito, endPos[0], endPos[1], endPos[2]]
+                        #Position Controller Outer Loop
+                        v_x = deltaX*np.cos(ang_z) + deltaY*np.sin(ang_z)
+                        v_y = deltaY*np.cos(ang_z) - deltaX*np.sin(ang_z)
+                        desired_roll = kp_r*v_y*-1
+                        desired_pitch = kp_p*v_x
+
+                        deltaRoll = desired_roll - ang_x
+                        deltaPitch = desired_pitch - ang_y
+                        deltaYaw = 0 - ang_z #Angulo al que mira el dron
+
+                        # -- Vertical control:
+                        cumul=cumul+deltaZ
+                        thrust = masa * (pParam*deltaZ + iParam*cumul + dParam*(deltaZ-lastE))
+                        lastE=deltaZ
+
+                        # --Stabilization Control
+                        cumulRoll=cumulRoll+deltaRoll
+                        roll = (pRoll*deltaRoll + iRoll*cumulRoll + dRoll*(deltaRoll-lastERoll))*-1
+                        lastERoll = deltaRoll
+
+                        cumulPitch=cumulPitch+deltaPitch
+                        pitch = (pPitch*deltaPitch + iPitch*cumulPitch + dPitch*(deltaPitch-lastEPitch))*-1
+                        lastEPitch = deltaPitch
+
+                        #Orientation Controller
+                        cumulYaw=cumulYaw+deltaYaw
+                        yaw = (pYaw*deltaYaw + iYaw*cumulYaw + dYaw*(deltaYaw-lastEYaw))*-1
+                        lastEYaw = deltaYaw
+
+                        axisForces.data = [thrust, roll, pitch, yaw]
+                        drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2]]
                         controller_time.data = [delta_realTime, delta_simTime]
 
-                        pub_pose.publish(avance)
-                        pub_euler.publish(avance_eu)
+                        pub_axisforces.publish(axisForces)
                         pub_status.publish(drone_status)
                         pub_time.publish(controller_time)
 
-                        print('Ajustando RHO: ' + str(round(rho,3)) + '  Avance: ' + str(avance.data))
-                        #print('realTime: ' + str(round(delta_realTime,4)) +' simTime: ' + str(round(delta_simTime,4)) + ' Time: ' + str(round(tiempito,3)))
+                        print('desired_roll: ' + str(round(desired_roll,3)) +' desired_pitch: ' + str(round(desired_pitch,3)) +' rho: ' + str(round(rho,3)))
                         sys.stdout.write("\033[K") # Clear to the end of line
                         sys.stdout.write("\033[F") # Cursor up one line
 
                     delta_simTime = simTime_actual - simTime_anterior
                     delta_realTime = realTime_actual - realTime_anterior
-                    print('real: ' + str(round(delta_realTime,4)) +' simTime: ' + str(round(delta_simTime,4)) + ' Time: ' + str(round(tiempito,3)))
-                    #sys.stdout.write("\033[K") # Clear to the end of line
-                    #sys.stdout.write("\033[F") # Cursor up one line
 
-
-        #print('----------------------------Termine la ruta--------------------------')
-        #sys.stdout.write("\033[K") # Clear to the end of line
-        #sys.stdout.write("\033[F") # Cursor up one line
+        print('----------------------------Termine la ruta--------------------------')
+        sys.stdout.write("\033[K") # Clear to the end of line
+        sys.stdout.write("\033[F") # Cursor up one line
         rate.sleep()
-
-#main_control()
 
 if __name__ == '__main__':
 	try:

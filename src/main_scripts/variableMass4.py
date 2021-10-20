@@ -51,7 +51,7 @@ class variableMass(object):
         self.irrigationFlag = 'initial'
         self.irrigationFlag_sub = rospy.Subscriber('/PE/Drone/tank_volume', String, self.callback_activation)
         self.matrixValues = np.zeros((2,3))
-        print(self.matrixValues, "Esta es la matriz cuando inicia")
+        #print(self.matrixValues, "Esta es la matriz cuando inicia")
         self.h = 1
         self.m = 0
         self.t = 0 #linespace
@@ -64,7 +64,7 @@ class variableMass(object):
 
     def callback_simulationTime(self,dataTime):
         self.simulationTime = int(dataTime.data)
-        print("El tiempo actual es",dataTime.data)
+        #print("El tiempo actual es",dataTime.data)
     
     def callback_activation(self,dataFlag):
         self.irrigationFlag = dataFlag.data
@@ -184,7 +184,7 @@ class variableMass(object):
             if self.cont == 0:
                 self.simTimeIrrigation0 = self.simulationTime
                 self.cont += 1
-            print("El tiempo inicial es ", self.simTimeIrrigation0)
+            #print("El tiempo inicial es ", self.simTimeIrrigation0)
             dimTank = np.array([0.560,0.435,(0.030)/(0.560*0.435)],dtype=np.float16)
             Q = 1.2e-4 #(m3/seg) Flow rate. 0.12L/seg
             den = 1e6 #(g/m3) Water density.
@@ -208,13 +208,13 @@ class variableMass(object):
 
             #Publicar
             actual_time = self.simulationTime - self.simTimeIrrigation0 #in seconds
-            print("El delta de tiempo es igual a ",actual_time)
+            #print("El delta de tiempo es igual a ",actual_time)
             idx = close_time_value(self.matrixValues[:,2],actual_time)
-            print("El tamaño de mi matriz es", self.matrixValues.shape)
-            print("Mi idx es igual a ", idx)
+            #print("El tamaño de mi matriz es", self.matrixValues.shape)
+            #print("Mi idx es igual a ", idx)
             self.pub.publish(self.matrixValues[idx,1])
-            print("Esta es la masa", self.matrixValues[idx,1])
-            print('\n')
+            #print("Esta es la masa", self.matrixValues[idx,1])
+            #print('\n')
 
 
             

@@ -14,15 +14,31 @@ simTime, realTime = 0, 0
 
 force, torque, tankMass, tankVolume, velocity = 0,0,0,' ',0
 
-#Estructura : [pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, pathTime]
+#Obtenemos la posicion del dron
+def dronePose_callback(msg):
+    global pos_x, pos_y, pos_z
+    #_,pos=sim.simxGetObjectPosition(clientID, Quadricopter_base, -1, sim.simx_opmode_blocking)
+    pos_x = msg.data[0]
+    pos_y = msg.data[1]
+    pos_z = msg.data[2]
+    return pos_x, pos_y, pos_z
+
+#Obtenemos la orientacion del dron
+def droneOrientation_callback(msg):
+    global ang_x, ang_y, ang_z
+    #_, orientation = sim.simxGetObjectOrientation(clientID,Quadricopter_base,-1,sim.simx_opmode_blocking)
+    ang_x = msg.data[0]
+    ang_y = msg.data[1]
+    ang_z = msg.data[2]
+    return ang_x, ang_y, ang_z
+
+#Estructura : [rho, pathTime, EndPos]
 def status_callback(msg):
-	global pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, pathTime, endPos_x, endPos_y, endPos_z
+	global rho, pathTime, endPos_x, endPos_y, endPos_z
 	
-	pos_x, pos_y, pos_z = msg.data[0], msg.data[1], msg.data[2]
-	ang_x, ang_y, ang_z =  msg.data[3], msg.data[4], msg.data[5]
-	rho =  msg.data[6]
-	pathTime = msg.data[7]
-	endPos_x, endPos_y, endPos_z = msg.data[8], msg.data[9], msg.data[10]
+	rho =  msg.data[0]
+	pathTime = msg.data[1]
+	endPos_x, endPos_y, endPos_z = msg.data[2], msg.data[3], msg.data[4]
 
 #Estructura : [delta_realTime, delta_simTime]
 def times_callback(msg):
@@ -40,7 +56,7 @@ def torque_callback(msg):
 
 def tankMass_callback(msg):
     global tankMass
-    tankMass = msg.data
+    tankMass = msg.data/1000
 
 def velocity_callback(msg):
 	global velocity
@@ -64,8 +80,10 @@ def info_status():
 	#rospy.Subscriber("/realTime", Float32, realTime_callback, tcp_nodelay=True)
 	rospy.Subscriber("/currentMass", Float32, tankMass_callback, tcp_nodelay=True)
 	rospy.Subscriber('/PE/Drone/tank_volume', String, tankVolume_callback)
+	rospy.Subscriber("/drone_pose", Float32MultiArray, dronePose_callback, tcp_nodelay=True)
+	rospy.Subscriber("/drone_orientation", Float32MultiArray, droneOrientation_callback, tcp_nodelay=True)
 
-	#Estructura : [pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, pathTime]
+	#Estructura : [rho, pathTime, Endpos]
 	rospy.Subscriber("PE/Drone/drone_status", Float32MultiArray, status_callback, tcp_nodelay=True)
 	#Estructura : [delta_realTime, delta_simTime]
 	rospy.Subscriber("PE/Drone/controller_time", Float32MultiArray, times_callback, tcp_nodelay=True)
@@ -80,10 +98,10 @@ def info_status():
 		mensaje = mensaje + 'Rho: ' + str(round(rho,3)) + '\n'
 		mensaje = mensaje + '\n'
 		mensaje = mensaje + 'Motor Force: ' + str(round(force,4)) + ' Motor Torque: ' + str(round(torque,4)) +' Motor Velocity: ' + str(round(velocity,4))+ '\n'
-		mensaje = mensaje + 'Tank Mass: ' + str(round(tankMass,3)) + ' Tank Volume: ' + tankVolume +'\n'
+		mensaje = mensaje + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume +'\n'
 		mensaje = mensaje + '\n'
 		mensaje = mensaje + 'RealTime: ' + str(round(realTime,4)) +' simTime: ' + str(round(simTime,4)) + ' PathTime: ' + str(round(pathTime,3))
-		mensaje = mensaje + '\n'
+		mensaje = mensaje + '\n \n'
 		print(mensaje)
 		
 		time.sleep(1)
