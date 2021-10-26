@@ -1,0 +1,7 @@
+<launch>
+    
+    <node type="variableMass_final.py" name="variableMass" pkg="problemaEspecial_pkg" output="screen"/>
+    <node type="simulation_wind.py" name="wind" pkg="problemaEspecial_pkg" output="screen"/>
+    <node type="auxiliarNodesPu.py" name="auxiliarNode" pkg="problemaEspecial_pkg" output="screen"/>
+
+</launch>
