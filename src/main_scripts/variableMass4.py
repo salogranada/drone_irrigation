@@ -94,8 +94,18 @@ class variableMass(object):
             self.t = t
             self.matrixValues = info
 
+            #Publicar
+            actual_time = self.simulationTime - self.simTimeIrrigation0 #in seconds
+            #print("El delta de tiempo es igual a ",actual_time)
+            idx = close_time_value(self.matrixValues[:,2],actual_time)
+            #print("El tamaño de mi matriz es", self.matrixValues.shape)
+            #print("Mi idx es igual a ", idx)
+            self.pub.publish(self.matrixValues[idx,1])
+            #print("Esta es la masa", self.matrixValues[idx,1])
+            #print('\n')
+
         elif self.irrigationFlag == 'B15L': #Begins irrigation (15L).
-            print("Entro a 15L")
+            #print("Entro a 15L")
             if self.cont == 0:
                 self.simTimeIrrigation0 = self.simulationTime
                 self.cont += 1
@@ -121,6 +131,16 @@ class variableMass(object):
             self.m = m
             self.t = t
             self.matrixValues = info
+
+            #Publicar
+            actual_time = self.simulationTime - self.simTimeIrrigation0 #in seconds
+            #print("El delta de tiempo es igual a ",actual_time)
+            idx = close_time_value(self.matrixValues[:,2],actual_time)
+            #print("El tamaño de mi matriz es", self.matrixValues.shape)
+            #print("Mi idx es igual a ", idx)
+            self.pub.publish(self.matrixValues[idx,1])
+            #print("Esta es la masa", self.matrixValues[idx,1])
+            #print('\n')
             
         
         #Assuming the flow rate of the Agras T30, and the box dimensions of Agras T30 (WxL)
@@ -151,6 +171,16 @@ class variableMass(object):
             self.m = m
             self.t = t
             self.matrixValues = info
+
+            #Publicar
+            actual_time = self.simulationTime - self.simTimeIrrigation0 #in seconds
+            #print("El delta de tiempo es igual a ",actual_time)
+            idx = close_time_value(self.matrixValues[:,2],actual_time)
+            #print("El tamaño de mi matriz es", self.matrixValues.shape)
+            #print("Mi idx es igual a ", idx)
+            self.pub.publish(self.matrixValues[idx,1])
+            #print("Esta es la masa", self.matrixValues[idx,1])
+            #print('\n')
         
         elif self.irrigationFlag == 'B25L': #Begins irrigation (25L).
             
@@ -179,6 +209,16 @@ class variableMass(object):
             self.m = m
             self.t = t
             self.matrixValues = info
+
+            #Publicar
+            actual_time = self.simulationTime - self.simTimeIrrigation0 #in seconds
+            #print("El delta de tiempo es igual a ",actual_time)
+            idx = close_time_value(self.matrixValues[:,2],actual_time)
+            #print("El tamaño de mi matriz es", self.matrixValues.shape)
+            #print("Mi idx es igual a ", idx)
+            self.pub.publish(self.matrixValues[idx,1])
+            #print("Esta es la masa", self.matrixValues[idx,1])
+            #print('\n')
         
         elif self.irrigationFlag == 'B30L': #Begins irrigation (30L).
             if self.cont == 0:
