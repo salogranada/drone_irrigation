@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rospy
 import time
+import numpy as np
 from geometry_msgs.msg import *
 from std_msgs.msg import Float32, Float32MultiArray, String
 #from termcolor import colored
@@ -12,7 +13,7 @@ pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, pathTime, endPos_x, endPos_y, end
 
 simTime, realTime = 0, 0
 
-force, torque, tankMass, tankVolume, velocity = 0,0,0,' ',0
+force, torque, tankMass, tankVolume, velocity = [],0,0,' ',0
 
 #Obtenemos la posicion del dron
 def dronePose_callback(msg):
@@ -48,11 +49,11 @@ def times_callback(msg):
 
 def force_callback(msg):
     global force
-    force = msg.data
+    force = [msg.data[0],msg.data[1],msg.data[2],msg.data[3]]
 
 def torque_callback(msg):
     global torque
-    torque = msg.data
+    torque = [msg.data[0],msg.data[1],msg.data[2],msg.data[3]]
 
 def tankMass_callback(msg):
     global tankMass
@@ -60,7 +61,10 @@ def tankMass_callback(msg):
 
 def velocity_callback(msg):
 	global velocity
-	velocity = msg.data
+	feedback_vel_x = msg.data[0]
+	feedback_vel_y = msg.data[1]
+	
+	velocity = np.sqrt(feedback_vel_x**2 + feedback_vel_y**2)
 
 def tankVolume_callback(msg):
 	global tankVolume
@@ -73,9 +77,9 @@ def info_status():
 	rospy.init_node('Status_Node', anonymous=True)  # Inicia el nodo status
 
 	#Subscripcion a topicos
-	rospy.Subscriber("/force", Float32, force_callback, tcp_nodelay=True)
-	rospy.Subscriber("/torque", Float32, torque_callback, tcp_nodelay=True)
-	rospy.Subscriber('/velocity', Float32, velocity_callback, tcp_nodelay=True)
+	rospy.Subscriber("/force", Float32MultiArray, force_callback, tcp_nodelay=True)
+	rospy.Subscriber("/torque", Float32MultiArray, torque_callback, tcp_nodelay=True)
+	rospy.Subscriber('/velocity', Float32MultiArray, velocity_callback, tcp_nodelay=True)
 	#rospy.Subscriber("/simulationTime", Float32, simTime_callback, tcp_nodelay=True)
 	#rospy.Subscriber("/realTime", Float32, realTime_callback, tcp_nodelay=True)
 	rospy.Subscriber("/currentMass", Float32, tankMass_callback, tcp_nodelay=True)
@@ -91,13 +95,14 @@ def info_status():
 
 
 	while not rospy.is_shutdown():
-		mensaje = '________________________________________________ \n \n'
+		mensaje = '_________________________________________________________ \n \n'
 		mensaje = mensaje + 'Pose Actual: ' + str(round(pos_x,4)) + ', ' + str(round(pos_y,4)) + ', ' + str(round(pos_z,4)) + ' Angulo Actual: ' + str(round(ang_x,3)) + ', ' + str(round(ang_y,3)) + ', ' + str(round(ang_z,3)) + '\n'
 		mensaje = mensaje + 'Pose Final: ' + str(round(endPos_x,3)) + ', ' + str(round(endPos_y,3)) + ', ' + str(round(endPos_z,3)) + '\n'
 		mensaje = mensaje + '\n'
 		mensaje = mensaje + 'Rho: ' + str(round(rho,3)) + '\n'
 		mensaje = mensaje + '\n'
-		mensaje = mensaje + 'Motor Force: ' + str(round(force,4)) + ' Motor Torque: ' + str(round(torque,4)) +' Motor Velocity: ' + str(round(velocity,4))+ '\n'
+		mensaje = mensaje + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
+		mensaje = mensaje + 'Motor Torque: ' + str(torque) + '\n'
 		mensaje = mensaje + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume +'\n'
 		mensaje = mensaje + '\n'
 		mensaje = mensaje + 'RealTime: ' + str(round(realTime,4)) +' simTime: ' + str(round(simTime,4)) + ' PathTime: ' + str(round(pathTime,3))
