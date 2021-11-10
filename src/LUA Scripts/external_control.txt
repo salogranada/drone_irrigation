@@ -1,0 +1,187 @@
+
+function axisForces_callback(msg)
+    forces = msg.data
+end
+function tankMass_callback(msg)
+    tankMass = msg.data/1000
+end
+function sysCall_init() 
+    particlesAreVisible=false
+    simulateParticles=false
+    fakeShadow=false
+    
+    particleCountPerSecond=430
+    particleSize=0.005
+    particleDensity=8500
+    particleScatteringAngle=30
+    particleLifeTime=0.5
+    maxParticleCount=50
+    
+    -- Create Python API Connection
+    simRemoteApi.start(19998)
+    rosInterfacePresent=simROS
+    
+    -- Prepare publisher and subscriber:
+    if rosInterfacePresent then
+        --Publishers
+        publisher=simROS.advertise('/simulationTime','std_msgs/Float32')
+        publisher2=simROS.advertise('/realTime','std_msgs/Float32')
+        publisher_force=simROS.advertise('/force','std_msgs/Float32MultiArray')
+        publisher_torque=simROS.advertise('/torque','std_msgs/Float32MultiArray')
+        publisher_velocity=simROS.advertise('/velocity','std_msgs/Float32MultiArray')
+        publisher_pose=simROS.advertise('/drone_pose','std_msgs/Float32MultiArray')
+        publisher_ori=simROS.advertise('/drone_orientation','std_msgs/Float32MultiArray')
+        
+        --Subscribers
+        subs_axisForce = simROS.subscribe('/drone_axisForces','std_msgs/Float32MultiArray','axisForces_callback')
+        subs_mass = simROS.subscribe('/currentMass', 'std_msgs/Float32', 'tankMass_callback')
+    end
+
+    -- Detatch the manipulation sphere:
+    targetObj=sim.getObjectHandle('Quadcopter_target')
+    sim.setObjectParent(targetObj,-1,true)
+
+    -- This control algo was quickly written and is dirty and not optimal. It just serves as a SIMPLE example
+    d=sim.getObjectHandle('Quadcopter_base')
+
+    propellerHandles={}
+    jointHandles={}
+    particleObjects={-1,-1,-1,-1}
+    local ttype=sim.particle_roughspheres+sim.particle_cyclic+sim.particle_respondable1to4+sim.particle_respondable5to8+sim.particle_ignoresgravity
+    if not particlesAreVisible then
+        ttype=ttype+sim.particle_invisible
+    end
+    for i=1,4,1 do
+        propellerHandles[i]=sim.getObjectHandle('Quadcopter_propeller_respondable'..i)
+        jointHandles[i]=sim.getObjectHandle('Quadcopter_propeller_joint'..i)
+        if simulateParticles then
+            particleObjects[i]=sim.addParticleObject(ttype,particleSize,particleDensity,{2,1,0.2,3,0.4},particleLifeTime,maxParticleCount,{0.3,0.7,1})
+        end
+    end
+    heli=sim.getObjectHandle(sim.handle_self)
+    initialInertia,initialMatrix=sim.getShapeInertia(heli)
+    
+    masa = 26   -- Kg, Peso de solo el drone
+    tankMass = 0 -- Masa variable del tanque, entra por el callback
+    sim.setShapeMass(heli,masa)
+    
+    thrust = 0
+    alphaCorr = 0
+    betaCorr = 0
+    rotCorr = 0
+    forces_array = {}
+    torque_array = {}
+
+    if (fakeShadow) then
+        shadowCont=sim.addDrawingObject(sim.drawing_discpoints+sim.drawing_cyclic+sim.drawing_25percenttransparency+sim.drawing_50percenttransparency+sim.drawing_itemsizes,0.2,0,-1,1)
+    end
+end
+
+function sysCall_cleanup() 
+    --sim.removeDrawingObject(shadowCont)
+    
+    sim.setShapeInertia(heli,initialInertia,initialMatrix)
+    
+    sim.setArrayParam(sim.arrayparam_gravity,{0.0,0.0,-9.81})
+    
+    for i=1,#particleObjects,1 do
+        sim.removeParticleObject(particleObjects[i])
+    end
+        -- Following not really needed in a simulation script (i.e. automatically shut down at simulation end):
+    if rosInterfacePresent then
+        simROS.shutdownPublisher(publisher)
+        simROS.shutdownPublisher(publisher2)
+        simROS.shutdownPublisher(publisher_force)
+        simROS.shutdownPublisher(publisher_torque)
+        simROS.shutdownPublisher(publisher_pose)
+        simROS.shutdownPublisher(publisher_ori)
+        simROS.shutdownPublisher(publisher_velocity)
+    end
+end 
+
+function sysCall_actuation() 
+
+    sim.setShapeMass(heli,masa + tankMass)
+    
+    print(sim.getShapeMass(heli))
+    --print(sim.getObjectVelocity(heli))
+    
+    if (fakeShadow) then
+        itemData={pos[1],pos[2],0.002,0,0,1,0.2}
+        sim.addDrawingObjectItem(shadowCont,itemData)
+    end
+    
+    if forces ~= nil then
+        thrust = forces[1]
+        alphaCorr = forces[2]
+        betaCorr = forces[3]
+        rotCorr = forces[4]
+    end
+    
+    -- Decide of the motor velocities:
+    handlePropeller(1,thrust*(1-alphaCorr+betaCorr+rotCorr))
+    handlePropeller(2,thrust*(1-alphaCorr-betaCorr-rotCorr))
+    handlePropeller(3,thrust*(1+alphaCorr-betaCorr+rotCorr))
+    handlePropeller(4,thrust*(1+alphaCorr+betaCorr-rotCorr))
+    
+    forces_array[1] = thrust*(1-alphaCorr+betaCorr+rotCorr)
+    forces_array[2] = thrust*(1-alphaCorr-betaCorr-rotCorr)
+    forces_array[3] = thrust*(1+alphaCorr-betaCorr+rotCorr)
+    forces_array[4] = thrust*(1+alphaCorr+betaCorr-rotCorr)
+    
+    torque_array[1] = torques(1, forces_array[1])
+    torque_array[2] = torques(2, forces_array[2])
+    torque_array[3] = torques(3, forces_array[3])
+    torque_array[4] = torques(4, forces_array[4])
+    
+    
+    --Se Publican los parametros necesarios
+    if rosInterfacePresent then
+        simROS.publish(publisher,{data=sim.getSimulationTime()})
+        simROS.publish(publisher2,{data=sim.getSystemTime()})
+        simROS.publish(publisher_pose,{data=sim.getObjectPosition(d,-1)})
+        simROS.publish(publisher_ori,{data=sim.getObjectOrientation(d,-1)})
+        simROS.publish(publisher_velocity,{data=sim.getObjectVelocity(heli)})
+        simROS.publish(publisher_force,{data=forces_array})
+        simROS.publish(publisher_torque,{data=torque_array})
+    end
+end 
+
+
+function handlePropeller(index,particleVelocity)
+    propellerRespondable=propellerHandles[index]
+    propellerJoint=jointHandles[index]
+    propeller=sim.getObjectParent(propellerRespondable)
+    particleObject=particleObjects[index]
+    maxParticleDeviation=math.tan(particleScatteringAngle*0.5*math.pi/180)*particleVelocity
+    notFullParticles=0
+
+    local t=sim.getSimulationTime()
+    sim.setJointPosition(propellerJoint,t*10)
+    
+    m=sim.getObjectMatrix(propeller,-1)
+    particleCnt=0
+    pos={0,0,0}
+    dir={0,0,1}
+    
+    -- Apply a reactive force onto the body:
+    --totalExertedForce=particleCnt*particleDensity*particleVelocity*math.pi*particleSize*particleSize*particleSize/(6*ts)
+    totalExertedForce=particleVelocity
+    force={0,0,totalExertedForce}
+    m[4]=0
+    m[8]=0
+    m[12]=0
+    force=sim.multiplyVector(m,force)
+    local rotDir=1-math.mod(index,2)*2
+    local total_torque = rotDir*0.002*particleVelocity
+    torque={0,0,total_torque} --Me permite la rotacion
+    torque=sim.multiplyVector(m,torque)
+    sim.addForceAndTorque(propellerRespondable,force,torque)
+    
+end
+
+function torques(index, particleVelocity)
+    local rotDir=1-math.mod(index,2)*2
+    local total_torque = rotDir*0.002*particleVelocity
+    return total_torque
+end
