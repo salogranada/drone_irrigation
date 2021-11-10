@@ -4,18 +4,18 @@ import sys
 import numpy as np
 from std_msgs.msg import Float32MultiArray, Float32, String
 
-#Controla el dron en cualquier direccion y cumple la ruta perfectamente.
-#Funciona. Hay que hacer que cumpla con los tiempos
-#funciona con la escena external_control.ttt
+#Controla el dron en cualquier direccion y se guia por la particula de CoppeliaSim
+#Funciona muy bien con los tiempos puestos
+#funciona con la escena tracking_control.ttt
 
-pos_x, pos_y, pos_z, theta, deltaX, deltaY = 0, 0, 0, 0, 0, 0
+pos_x, pos_y, pos_z, theta, deltaX, deltaY, posTarget_x,posTarget_y,posTarget_z = 0, 0, 0, 0, 0, 0, 0, 0, 0
 ang_x, ang_y, ang_z = 0,0,0
 
 masa = 26
 rho = 0
 
 #Outer Loop Gains - Desired roll and pitch, desired path time
-kp_r, kp_p, kp_t, kd_t = 0.5, 0.5, 1, 0
+kp_r, kp_p, kp_t, kd_t = 0.5, 0.5, 2, 0
 
 #Inner Loop Gains - Thrust, Roll, Pitch, Yaw Control
 pParam, iParam, dParam, vParam = 32,0,0.005,-2
@@ -24,7 +24,7 @@ pPitch, iPitch, dPitch = 64,0,0.005
 pYaw, iYaw, dYaw = 128,0,0.05
 
 #Tiempo en el que quiero recorrer cada trayectoria en segundos [s]
-tiempo = [40, 40, 40, 40]
+tiempo = [80, 50, 20, 10]
 
 #Puntos dentro de la ruta en metros [m]
 ruta = [[0,0,1], [-3,0,1], [-3,3,1], [3,3,1], [0,4,1]]
@@ -50,6 +50,13 @@ def dronePose_callback(msg):
     pos_y = msg.data[1]
     pos_z = msg.data[2]
     return pos_x, pos_y, pos_z
+
+def targetPose_callback(msg):
+    global posTarget_x, posTarget_y, posTarget_z
+    posTarget_x = msg.data[0]
+    posTarget_y = msg.data[1]
+    posTarget_z = msg.data[2]
+
 
 #Obtenemos la orientacion del dron
 def droneOrientation_callback(msg):
@@ -84,7 +91,7 @@ def droneVelocity_callback(msg):
 
 #Funcion principal donde corren todos los controladores
 def main_control():
-    global pos_x, pos_y, pos_z, theta, deltaX, deltaY, tiempo, ruta, ang_x, ang_y, ang_z
+    global pos_x, pos_y, pos_z, theta, deltaX, deltaY, tiempo, ruta, ang_x, ang_y, ang_z, posTarget_x,posTarget_y,posTarget_z
     global simTime_actual, realTime_actual, simTime_anterior, realTime_anterior, realTime, simTime, tankMass, init
 
     print('Starting control node...')
@@ -93,11 +100,13 @@ def main_control():
     rate = rospy.Rate(10) #10hz
 
     #Publicacion de topicos
+    pub_pose = rospy.Publisher('/drone_nextPose', Float32MultiArray, queue_size=10)
+    pub_euler = rospy.Publisher('/drone_nextEuler', Float32MultiArray, queue_size=10)
     pub_tank_volume = rospy.Publisher('/PE/Drone/tank_volume', String, queue_size=10)
     pub_axisforces = rospy.Publisher('/drone_axisForces', Float32MultiArray, queue_size=10)
 
     #Estructura : [rho, tiempito, Endpos]
-    pub_status = rospy.Publisher('PE/Drone/drone_status', Float32MultiArray, queue_size=10)
+    pub_status = rospy.Publisher('/PE/Drone/drone_status', Float32MultiArray, queue_size=10)
     pub_time = rospy.Publisher('PE/Drone/controller_time', Float32MultiArray, queue_size=10)
 
     #Subscripcion a topicos
@@ -105,18 +114,17 @@ def main_control():
     rospy.Subscriber("/realTime", Float32, realTime_callback, tcp_nodelay=True)
     rospy.Subscriber("/currentMass", Float32, tankMass_callback, tcp_nodelay=True)
     rospy.Subscriber("/drone_pose", Float32MultiArray, dronePose_callback, tcp_nodelay=True)
+    rospy.Subscriber("/target_pose", Float32MultiArray, targetPose_callback, tcp_nodelay=True)
     rospy.Subscriber("/drone_orientation", Float32MultiArray, droneOrientation_callback, tcp_nodelay=True)
     rospy.Subscriber("/velocity", Float32MultiArray, droneVelocity_callback, tcp_nodelay=True)
     #rospy.Subscriber("PE/Drone/init_flag", Bool, init_callback, tcp_nodelay=True)
 
     contador = 0
-    desired_vel_x, desired_vel_y = 0,0
     delta_realTime = 0
     delta_simTime = 0
 
-    cumul, cumulRoll, cumulPitch, cumulYaw, lastE, lastERoll, lastEPitch, lastEYaw, lastEVel_x, lastEVel_y = 0,0,0,0,0,0,0,0,0,0
-    thrust, roll, pitch, yaw = 0,0,0,0
-
+    avance = Float32MultiArray()
+    avance_eu = Float32MultiArray()
     drone_status = Float32MultiArray()
     controller_time = Float32MultiArray()
     axisForces = Float32MultiArray()
@@ -136,7 +144,7 @@ def main_control():
                     init = True 
                 else: 
                     init = False
-                #init = True
+                init = True
                 if init == True:
                     tiempito = tiempo[contador]
 
@@ -146,36 +154,12 @@ def main_control():
                     endPos_theta = np.arctan2(float(coord_y), float(coord_x))
                     endPos = [float(coord_x), float(coord_y), float(coord_z) ] # [X. Y, Z]
 
-                    deltaX = endPos[0] - pos_x #Distancia que me falta en X
-                    deltaY = endPos[1] - pos_y #Distancia que me falta en Y
+                    deltaX = endPos[0] - posTarget_x #Distancia que me falta en X [particula]
+                    deltaY = endPos[1] - posTarget_y #Distancia que me falta en Y [particula]
                     deltaZ = endPos[2] - pos_z
 
                     rho = np.sqrt(deltaX**2 + deltaY**2)
                     init_rho = rho
-
-                    #ponemos al dron a volar antes de iniciar el recorrido
-                    while deltaZ > 0.2:
-
-                        deltaX = endPos[0] - pos_x #Distancia que me falta en X
-                        deltaY = endPos[1] - pos_y #Distancia que me falta en Y
-                        deltaZ = endPos[2] - pos_z
-
-                        rho = np.sqrt(deltaX**2 + deltaY**2)
-
-                        # -- Vertical control:
-                        cumul=cumul+deltaZ
-                        thrust = masa * (pParam*deltaZ + iParam*cumul + dParam*(deltaZ-lastE))
-                        lastE=deltaZ
-
-                        axisForces.data = [thrust, 0, 0, 0]
-                        drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2]]
-
-                        pub_axisforces.publish(axisForces)
-                        pub_status.publish(drone_status)
-
-                        print('Ajustando altura: '+str(thrust) + '  Delta Z: ' + str(deltaZ))
-                        sys.stdout.write("\033[K") # Clear to the end of line
-                        sys.stdout.write("\033[F") # Cursor up one line
 
                     contador = contador + 1
 
@@ -188,10 +172,15 @@ def main_control():
                     delta_realTime = realTime_actual - realTime_anterior
 
                     simTime_anterior = simTime_actual
+                    sim_anterior2 = simTime_actual
                     realTime_anterior = realTime_actual
 
                     #Calculamos velocidad constante dependiendo de la direccion
                     path_vel = init_rho/tiempito
+
+                    #Calculamos velocidad constante a la que debería ir el target
+                    v_x = deltaX/tiempito    
+                    v_y = deltaY/tiempito
 
                     #mientras no lleguemos, siga avanzando
                     while rho > 0.2:
@@ -202,69 +191,33 @@ def main_control():
                         delta_simTime = simTime_actual - simTime_anterior
                         delta_realTime = realTime_actual - realTime_anterior
 
-                        deltaX = endPos[0] - pos_x #Distancia que me falta en X
-                        deltaY = endPos[1] - pos_y #Distancia que me falta en Y
+                        deltaX = endPos[0] - posTarget_x #Distancia que me falta en X
+                        deltaY = endPos[1] - posTarget_y #Distancia que me falta en Y
                         deltaZ = endPos[2] - pos_z
 
                         rho = np.sqrt(deltaX**2 + deltaY**2)
 
-                        #Push (empuje) control:
-                        vel_adjust_x = kp_t*(path_vel-feedback_vel_x) + kd_t*((path_vel-feedback_vel_x)-lastEVel_x)
-                        lastEVel_x = (path_vel-feedback_vel_x)
+                        paso_x = v_x #+ vel_adjust_x
+                        paso_y = v_y #+ vel_adjust_y
 
-                        vel_adjust_y = kp_t*(path_vel-feedback_vel_y) + kd_t*((path_vel-feedback_vel_y)-lastEVel_y)
-                        lastEVel_y = (path_vel-feedback_vel_y)
+                        #La velocidad esta en metros por segundo, solo hasta que en el tiempo de simulacion hayan pasado 1 segundo se publica.
+                        if simTime_actual - sim_anterior2 >= 1:
+                            
+                            sim_anterior2 = simTime_actual
 
-                        #Position Controller Outer Loop
-                        desired_vel_x = deltaX*np.cos(ang_z) + deltaY*np.sin(ang_z) 
-                        desired_vel_y = deltaY*np.cos(ang_z) - deltaX*np.sin(ang_z) 
-                        desired_roll = kp_r*desired_vel_y*-1 
-                        desired_pitch = kp_p*desired_vel_x 
+                            avance.data = [posTarget_x+paso_x, posTarget_y+paso_y, endPos[2]]
+                            avance_eu.data = [ang_x, ang_y, ang_z]
+                            axisForces.data = [0, 0, 0, 0]
+                            drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2]]
+                            controller_time.data = [delta_realTime, delta_simTime]
 
-                        #Satura el angulo maximo para que se voltee si la distancia es lejana
-                        if desired_roll > 0.4:
-                            desired_roll = 0.4
-                        elif desired_roll < -0.4:
-                            desired_roll = -0.4
+                            pub_pose.publish(avance)
+                            pub_euler.publish(avance_eu)
+                            pub_axisforces.publish(axisForces)
+                            pub_status.publish(drone_status)
+                            pub_time.publish(controller_time)
 
-                        if desired_pitch > 0.4:
-                            desired_pitch = 0.4
-                        elif desired_pitch < -0.4:
-                            desired_pitch = -0.4
-
-                        deltaRoll = desired_roll - ang_x
-                        deltaPitch = desired_pitch - ang_y
-                        deltaYaw = 0 - ang_z #Angulo al que mira el dron
-
-
-                        # -- Vertical control:
-                        cumul=cumul+deltaZ
-                        thrust = masa * (pParam*deltaZ + iParam*cumul + dParam*(deltaZ-lastE))
-                        lastE=deltaZ
-
-                        # --Stabilization Control
-                        cumulRoll=cumulRoll+deltaRoll
-                        roll = ((pRoll*deltaRoll + iRoll*cumulRoll + dRoll*(deltaRoll-lastERoll))*-1) + vel_adjust_x
-                        lastERoll = deltaRoll
-
-                        cumulPitch=cumulPitch+deltaPitch
-                        pitch = ((pPitch*deltaPitch + iPitch*cumulPitch + dPitch*(deltaPitch-lastEPitch))*-1) + vel_adjust_y
-                        lastEPitch = deltaPitch
-
-                        #Orientation Controller
-                        cumulYaw=cumulYaw+deltaYaw
-                        yaw = (pYaw*deltaYaw + iYaw*cumulYaw + dYaw*(deltaYaw-lastEYaw))*-1
-                        lastEYaw = deltaYaw
-
-                        axisForces.data = [thrust, roll, pitch, yaw]
-                        drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2]]
-                        controller_time.data = [delta_realTime, delta_simTime]
-
-                        pub_axisforces.publish(axisForces)
-                        pub_status.publish(drone_status)
-                        pub_time.publish(controller_time)
-
-                        print('feedback_vel: ' + str(round(feedback_vel,3)) + ' path_vel: ' + str(round(path_vel,3)) +' vel_adjust_X: ' + str(round(vel_adjust_x,3))+' vel_adjust_y: ' + str(round(vel_adjust_y,3)))
+                        print('Delta_sim: ' + str(round(delta_simTime,3)) +  '  time_control: ' + str(round(simTime_actual - sim_anterior2,3)) )
                         sys.stdout.write("\033[K") # Clear to the end of line
                         sys.stdout.write("\033[F") # Cursor up one line
 

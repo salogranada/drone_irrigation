@@ -24,7 +24,7 @@ pPitch, iPitch, dPitch = 64,0,0.005
 pYaw, iYaw, dYaw = 128,0,0.05
 
 #Tiempo en el que quiero recorrer cada trayectoria en segundos [s]
-tiempo = [80, 40, 150, 50]
+tiempo = [80, 50, 20, 10]
 
 #Puntos dentro de la ruta en metros [m]
 ruta = [[0,0,1], [-3,0,1], [-3,3,1], [3,3,1], [0,4,1]]
@@ -106,7 +106,7 @@ def main_control():
     pub_axisforces = rospy.Publisher('/drone_axisForces', Float32MultiArray, queue_size=10)
 
     #Estructura : [rho, tiempito, Endpos]
-    pub_status = rospy.Publisher('PE/Drone/drone_status', Float32MultiArray, queue_size=10)
+    pub_status = rospy.Publisher('/PE/Drone/drone_status', Float32MultiArray, queue_size=10)
     pub_time = rospy.Publisher('PE/Drone/controller_time', Float32MultiArray, queue_size=10)
 
     #Subscripcion a topicos
@@ -120,12 +120,8 @@ def main_control():
     #rospy.Subscriber("PE/Drone/init_flag", Bool, init_callback, tcp_nodelay=True)
 
     contador = 0
-    desired_vel_x, desired_vel_y = 0,0
     delta_realTime = 0
     delta_simTime = 0
-
-    cumul, cumulRoll, cumulPitch, cumulYaw, lastE, lastERoll, lastEPitch, lastEYaw, lastEVel_x, lastEVel_y = 0,0,0,0,0,0,0,0,0,0
-    thrust, roll, pitch, yaw = 0,0,0,0
 
     avance = Float32MultiArray()
     avance_eu = Float32MultiArray()
@@ -165,30 +161,6 @@ def main_control():
                     rho = np.sqrt(deltaX**2 + deltaY**2)
                     init_rho = rho
 
-                    #ponemos al dron a volar antes de iniciar el recorrido
-                    while deltaZ > 0.2:
-
-                        deltaX = endPos[0] - posTarget_x #Distancia que me falta en X
-                        deltaY = endPos[1] - posTarget_y #Distancia que me falta en Y
-                        deltaZ = endPos[2] - pos_z
-
-                        rho = np.sqrt(deltaX**2 + deltaY**2)
-
-                        # -- Vertical control:
-                        cumul=cumul+deltaZ
-                        thrust = masa * (pParam*deltaZ + iParam*cumul + dParam*(deltaZ-lastE))
-                        lastE=deltaZ
-
-                        axisForces.data = [0, 0, 0, 0]
-                        drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2]]
-
-                        pub_axisforces.publish(axisForces)
-                        pub_status.publish(drone_status)
-
-                        print('Ajustando altura: '+str(thrust) + '  Delta Z: ' + str(deltaZ))
-                        sys.stdout.write("\033[K") # Clear to the end of line
-                        sys.stdout.write("\033[F") # Cursor up one line
-
                     contador = contador + 1
 
                     #Calculamos tiempo en simulacion y tiempo real
@@ -225,24 +197,14 @@ def main_control():
 
                         rho = np.sqrt(deltaX**2 + deltaY**2)
 
-                        #Push (empuje) control:
-                        vel_adjust_x = kp_t*(path_vel-feedback_vel_x) + kd_t*((path_vel-feedback_vel_x)-lastEVel_x)
-                        lastEVel_x = (path_vel-feedback_vel_x)
-
-                        vel_adjust_y = kp_t*(path_vel-feedback_vel_y) + kd_t*((path_vel-feedback_vel_y)-lastEVel_y)
-                        lastEVel_y = (path_vel-feedback_vel_y)
-
-                        # -- Vertical control:
-                        cumul=cumul+deltaZ
-                        thrust = masa * (pParam*deltaZ + iParam*cumul + dParam*(deltaZ-lastE))
-                        lastE=deltaZ
-
                         paso_x = v_x #+ vel_adjust_x
                         paso_y = v_y #+ vel_adjust_y
 
                         #La velocidad esta en metros por segundo, solo hasta que en el tiempo de simulacion hayan pasado 1 segundo se publica.
                         if simTime_actual - sim_anterior2 >= 1:
+                            
                             sim_anterior2 = simTime_actual
+
                             avance.data = [posTarget_x+paso_x, posTarget_y+paso_y, endPos[2]]
                             avance_eu.data = [ang_x, ang_y, ang_z]
                             axisForces.data = [0, 0, 0, 0]

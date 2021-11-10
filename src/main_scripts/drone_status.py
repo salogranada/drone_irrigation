@@ -88,7 +88,7 @@ def info_status():
 	rospy.Subscriber("/drone_orientation", Float32MultiArray, droneOrientation_callback, tcp_nodelay=True)
 
 	#Estructura : [rho, pathTime, Endpos]
-	rospy.Subscriber("PE/Drone/drone_status", Float32MultiArray, status_callback, tcp_nodelay=True)
+	rospy.Subscriber("/PE/Drone/drone_status", Float32MultiArray, status_callback, tcp_nodelay=True)
 	#Estructura : [delta_realTime, delta_simTime]
 	rospy.Subscriber("PE/Drone/controller_time", Float32MultiArray, times_callback, tcp_nodelay=True)
 	rate = rospy.Rate(10)
