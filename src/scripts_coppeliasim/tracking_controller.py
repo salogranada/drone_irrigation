@@ -4,9 +4,12 @@ import sys
 import numpy as np
 from std_msgs.msg import Float32MultiArray, Float32, String
 
-#Controla el dron en cualquier direccion y se guia por la particula de CoppeliaSim
-#Funciona muy bien con los tiempos puestos
+#Drone control guided by particle in simulation.
+#Set the list of points in the trajectory and time the drone must reach each point.
 #Coppeliasim Scene: tracking_control.ttt
+
+#Author: Salomón Granada Ulloque
+#Email: s.granada@uniandes.edu.co
 
 pos_x, pos_y, pos_z, theta, deltaX, deltaY, posTarget_x,posTarget_y,posTarget_z = 0, 0, 0, 0, 0, 0, 0, 0, 0
 ang_x, ang_y, ang_z = 0,0,0
@@ -15,12 +18,14 @@ ang_x, ang_y, ang_z = 0,0,0
 masa = 26
 rho = 0
 
+#Volume of the water tank.
+tankVolume = 'B15L'
+
 #Time for each of the paths in the trayectory [s]
-tiempo = [80, 30, 20, 10]
+tiempo = [80, 40, 30, 20]
 
 #Path points inside of the trayectory [m]
-ruta = [[0,0,1], [-3,0,1], [-3,3,1], [3,3,1], [0,4,1]]
-
+ruta = [[-4,0,1], [-3,0,1], [0,0,1], [2,0,1], [0,4,1]]
 
 simTime_anterior = 0
 realTime_anterior = 0
@@ -30,7 +35,6 @@ simTime = 0
 realTime = 0
 tankMass = 0
 init = False
-feedback_vel, feedback_vel_x, feedback_vel_y = 0,0,0
 
 print('Program started')
 
@@ -44,7 +48,6 @@ def targetPose_callback(msg):
 #Drone position
 def dronePose_callback(msg):
     global pos_x, pos_y, pos_z
-    #_,pos=sim.simxGetObjectPosition(clientID, Quadricopter_base, -1, sim.simx_opmode_blocking)
     pos_x = msg.data[0]
     pos_y = msg.data[1]
     pos_z = msg.data[2]
@@ -53,7 +56,6 @@ def dronePose_callback(msg):
 #Drone orientation
 def droneOrientation_callback(msg):
     global ang_x, ang_y, ang_z
-    #_, orientation = sim.simxGetObjectOrientation(clientID,Quadricopter_base,-1,sim.simx_opmode_blocking)
     ang_x = msg.data[0]
     ang_y = msg.data[1]
     ang_z = msg.data[2]
@@ -74,12 +76,6 @@ def tankMass_callback(msg):
     global tankMass
     tankMass = msg.data
 
-def droneVelocity_callback(msg):
-    global feedback_vel, feedback_vel_x, feedback_vel_y
-    feedback_vel_x = msg.data[0]
-    feedback_vel_y = msg.data[1]
-
-    feedback_vel = np.sqrt(feedback_vel_x**2 + feedback_vel_y**2)
 
 #Main function for drone movement.
 def main_control():
@@ -108,12 +104,14 @@ def main_control():
     rospy.Subscriber("/drone_pose", Float32MultiArray, dronePose_callback, tcp_nodelay=True)
     rospy.Subscriber("/target_pose", Float32MultiArray, targetPose_callback, tcp_nodelay=True)
     rospy.Subscriber("/drone_orientation", Float32MultiArray, droneOrientation_callback, tcp_nodelay=True)
-    rospy.Subscriber("/velocity", Float32MultiArray, droneVelocity_callback, tcp_nodelay=True)
+    #rospy.Subscriber("/velocity", Float32MultiArray, droneVelocity_callback, tcp_nodelay=True)
     #rospy.Subscriber("PE/Drone/init_flag", Bool, init_callback, tcp_nodelay=True)
 
     contador = 0
     delta_realTime = 0
     delta_simTime = 0
+    lastDronePose = 0
+    droneVel = 0
 
     avance = Float32MultiArray()
     avance_eu = Float32MultiArray()
@@ -130,7 +128,7 @@ def main_control():
                 sys.stdout.write("\033[K") # Clear to the end of line
                 sys.stdout.write("\033[F") # Cursor up one line
 
-                pub_tank_volume.publish('B15L') #Select tank volume.
+                pub_tank_volume.publish(tankVolume) #Select tank volume.
                 
                 if tankMass != 0:
                     init = True 
@@ -153,6 +151,8 @@ def main_control():
 
                     rho = np.sqrt(deltaX**2 + deltaY**2)
 
+                    path_vel = rho/tiempito
+
                     contador = contador + 1
 
                     #Update simulation and real time.
@@ -163,7 +163,7 @@ def main_control():
                     delta_realTime = realTime_actual - realTime_anterior
 
                     simTime_anterior = simTime_actual
-                    sim_anterior2 = simTime_actual
+                    sim_anterior2 = simTime_actual #helps checking if 1 second has passed in simulation.
                     realTime_anterior = realTime_actual
 
                     #Target (particle) conestant velocity.
@@ -172,7 +172,10 @@ def main_control():
 
                     #While we reach the point (with certain error), keep moving.
                     while rho > 0.2:
-                        pub_tank_volume.publish('B15L') #Select tank volume.
+
+                        actualDronePose = pos_x
+
+                        pub_tank_volume.publish(tankVolume) #Select tank volume.
                         simTime_actual = simTime
                         realTime_actual = realTime
 
@@ -188,13 +191,16 @@ def main_control():
                         paso_y = v_y #+ vel_adjust_y
 
                         #Only when 1 second has passed in simulation, publish the new position.
+                        #Simulation con go faster than real time and still behave as supposed.
                         if simTime_actual - sim_anterior2 >= 1:
+
+                            droneVel = actualDronePose - lastDronePose
+                            lastDronePose = actualDronePose
                             
                             sim_anterior2 = simTime_actual
 
                             avance.data = [posTarget_x+paso_x, posTarget_y+paso_y, endPos[2]]
                             avance_eu.data = [ang_x, ang_y, ang_z]
-                            axisForces.data = [0, 0, 0, 0]
                             drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2]]
                             controller_time.data = [delta_realTime, delta_simTime]
 
@@ -204,7 +210,7 @@ def main_control():
                             pub_status.publish(drone_status)
                             pub_time.publish(controller_time)
 
-                        print('Delta_sim: ' + str(round(delta_simTime,3)) +  '  time_control: ' + str(round(simTime_actual - sim_anterior2,3)) )
+                        print('path_vel: ' + str(round(path_vel,4)) + '  droneVel: ' + str(round(droneVel,4)) + '   tiempito: ' + str(round(tiempito,3)) + '   Delta_sim: ' + str(round(delta_simTime,3)) )
                         sys.stdout.write("\033[K") # Clear to the end of line
                         sys.stdout.write("\033[F") # Cursor up one line
 
