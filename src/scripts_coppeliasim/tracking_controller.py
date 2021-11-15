@@ -6,27 +6,19 @@ from std_msgs.msg import Float32MultiArray, Float32, String
 
 #Controla el dron en cualquier direccion y se guia por la particula de CoppeliaSim
 #Funciona muy bien con los tiempos puestos
-#funciona con la escena tracking_control.ttt
+#Coppeliasim Scene: tracking_control.ttt
 
 pos_x, pos_y, pos_z, theta, deltaX, deltaY, posTarget_x,posTarget_y,posTarget_z = 0, 0, 0, 0, 0, 0, 0, 0, 0
 ang_x, ang_y, ang_z = 0,0,0
 
+#Drone mass
 masa = 26
 rho = 0
 
-#Outer Loop Gains - Desired roll and pitch, desired path time
-kp_r, kp_p, kp_t, kd_t = 0.5, 0.5, 2, 0
+#Time for each of the paths in the trayectory [s]
+tiempo = [80, 30, 20, 10]
 
-#Inner Loop Gains - Thrust, Roll, Pitch, Yaw Control
-pParam, iParam, dParam, vParam = 32,0,0.005,-2
-pRoll, iRoll, dRoll = 2,0,0.005
-pPitch, iPitch, dPitch = 64,0,0.005
-pYaw, iYaw, dYaw = 128,0,0.05
-
-#Tiempo en el que quiero recorrer cada trayectoria en segundos [s]
-tiempo = [80, 50, 20, 10]
-
-#Puntos dentro de la ruta en metros [m]
+#Path points inside of the trayectory [m]
 ruta = [[0,0,1], [-3,0,1], [-3,3,1], [3,3,1], [0,4,1]]
 
 
@@ -42,7 +34,14 @@ feedback_vel, feedback_vel_x, feedback_vel_y = 0,0,0
 
 print('Program started')
 
-#Obtenemos la posicion del dron
+#Particle (target) position
+def targetPose_callback(msg):
+    global posTarget_x, posTarget_y, posTarget_z
+    posTarget_x = msg.data[0]
+    posTarget_y = msg.data[1]
+    posTarget_z = msg.data[2]
+
+#Drone position
 def dronePose_callback(msg):
     global pos_x, pos_y, pos_z
     #_,pos=sim.simxGetObjectPosition(clientID, Quadricopter_base, -1, sim.simx_opmode_blocking)
@@ -51,14 +50,7 @@ def dronePose_callback(msg):
     pos_z = msg.data[2]
     return pos_x, pos_y, pos_z
 
-def targetPose_callback(msg):
-    global posTarget_x, posTarget_y, posTarget_z
-    posTarget_x = msg.data[0]
-    posTarget_y = msg.data[1]
-    posTarget_z = msg.data[2]
-
-
-#Obtenemos la orientacion del dron
+#Drone orientation
 def droneOrientation_callback(msg):
     global ang_x, ang_y, ang_z
     #_, orientation = sim.simxGetObjectOrientation(clientID,Quadricopter_base,-1,sim.simx_opmode_blocking)
@@ -67,7 +59,7 @@ def droneOrientation_callback(msg):
     ang_z = msg.data[2]
     return ang_x, ang_y, ang_z
 
-#Obtenemos el tiempo de simulacion
+#OSimulation time:
 def simTime_callback(msg):
     global simTime
     simTime = msg.data
@@ -77,7 +69,7 @@ def realTime_callback(msg):
     global realTime
     realTime = msg.data
 
-#Obtenemos el peso del tanque
+#Tank mass weight
 def tankMass_callback(msg):
     global tankMass
     tankMass = msg.data
@@ -89,7 +81,7 @@ def droneVelocity_callback(msg):
 
     feedback_vel = np.sqrt(feedback_vel_x**2 + feedback_vel_y**2)
 
-#Funcion principal donde corren todos los controladores
+#Main function for drone movement.
 def main_control():
     global pos_x, pos_y, pos_z, theta, deltaX, deltaY, tiempo, ruta, ang_x, ang_y, ang_z, posTarget_x,posTarget_y,posTarget_z
     global simTime_actual, realTime_actual, simTime_anterior, realTime_anterior, realTime, simTime, tankMass, init
@@ -99,17 +91,17 @@ def main_control():
     rospy.init_node('Control_Node', anonymous=True) #Inicio nodo
     rate = rospy.Rate(10) #10hz
 
-    #Publicacion de topicos
+    #Topic publishing
     pub_pose = rospy.Publisher('/drone_nextPose', Float32MultiArray, queue_size=10)
     pub_euler = rospy.Publisher('/drone_nextEuler', Float32MultiArray, queue_size=10)
     pub_tank_volume = rospy.Publisher('/PE/Drone/tank_volume', String, queue_size=10)
     pub_axisforces = rospy.Publisher('/drone_axisForces', Float32MultiArray, queue_size=10)
 
-    #Estructura : [rho, tiempito, Endpos]
+    #Publishing structure: [rho, tiempito, Endpos]
     pub_status = rospy.Publisher('/PE/Drone/drone_status', Float32MultiArray, queue_size=10)
     pub_time = rospy.Publisher('PE/Drone/controller_time', Float32MultiArray, queue_size=10)
 
-    #Subscripcion a topicos
+    #Topic subscribers:
     rospy.Subscriber("/simulationTime", Float32, simTime_callback, tcp_nodelay=True)
     rospy.Subscriber("/realTime", Float32, realTime_callback, tcp_nodelay=True)
     rospy.Subscriber("/currentMass", Float32, tankMass_callback, tcp_nodelay=True)
@@ -130,21 +122,23 @@ def main_control():
     axisForces = Float32MultiArray()
 
     while not rospy.is_shutdown():
-        #Recorremos cada punto en la ruta
-        
+
+        #Go over each point of the trayectory
         for coord in ruta:
-            if contador < len(tiempo): #Para recorrer completamente la lista de tiempos
+            if contador < len(tiempo): #Go through each of the times in the list.
                 print('Waiting for variableMass...')
                 sys.stdout.write("\033[K") # Clear to the end of line
                 sys.stdout.write("\033[F") # Cursor up one line
 
-                pub_tank_volume.publish('B15L')
+                pub_tank_volume.publish('B15L') #Select tank volume.
                 
                 if tankMass != 0:
                     init = True 
                 else: 
                     init = False
                 init = True
+
+                #If tank mass is already calculated, we can start.
                 if init == True:
                     tiempito = tiempo[contador]
 
@@ -154,20 +148,17 @@ def main_control():
                     endPos_theta = np.arctan2(float(coord_y), float(coord_x))
                     endPos = [float(coord_x), float(coord_y), float(coord_z) ] # [X. Y, Z]
 
-                    deltaX = endPos[0] - posTarget_x #Distancia que me falta en X [particula]
-                    deltaY = endPos[1] - posTarget_y #Distancia que me falta en Y [particula]
-                    deltaZ = endPos[2] - pos_z
+                    deltaX = endPos[0] - posTarget_x #Distance error X-axis [particle]
+                    deltaY = endPos[1] - posTarget_y #Distance error Y-axis [particle]
 
                     rho = np.sqrt(deltaX**2 + deltaY**2)
-                    init_rho = rho
 
                     contador = contador + 1
 
-                    #Calculamos tiempo en simulacion y tiempo real
+                    #Update simulation and real time.
                     simTime_actual = simTime
                     realTime_actual = realTime
 
-                    #if delta_simTime < tiempo_path:
                     delta_simTime = simTime_actual - simTime_anterior
                     delta_realTime = realTime_actual - realTime_anterior
 
@@ -175,32 +166,28 @@ def main_control():
                     sim_anterior2 = simTime_actual
                     realTime_anterior = realTime_actual
 
-                    #Calculamos velocidad constante dependiendo de la direccion
-                    path_vel = init_rho/tiempito
-
-                    #Calculamos velocidad constante a la que debería ir el target
+                    #Target (particle) conestant velocity.
                     v_x = deltaX/tiempito    
                     v_y = deltaY/tiempito
 
-                    #mientras no lleguemos, siga avanzando
+                    #While we reach the point (with certain error), keep moving.
                     while rho > 0.2:
-                        pub_tank_volume.publish('B15L')
+                        pub_tank_volume.publish('B15L') #Select tank volume.
                         simTime_actual = simTime
                         realTime_actual = realTime
 
                         delta_simTime = simTime_actual - simTime_anterior
                         delta_realTime = realTime_actual - realTime_anterior
 
-                        deltaX = endPos[0] - posTarget_x #Distancia que me falta en X
-                        deltaY = endPos[1] - posTarget_y #Distancia que me falta en Y
-                        deltaZ = endPos[2] - pos_z
+                        deltaX = endPos[0] - posTarget_x #Distance error X-axis [particle]
+                        deltaY = endPos[1] - posTarget_y #Distance error Y-axis [particle]
 
                         rho = np.sqrt(deltaX**2 + deltaY**2)
 
                         paso_x = v_x #+ vel_adjust_x
                         paso_y = v_y #+ vel_adjust_y
 
-                        #La velocidad esta en metros por segundo, solo hasta que en el tiempo de simulacion hayan pasado 1 segundo se publica.
+                        #Only when 1 second has passed in simulation, publish the new position.
                         if simTime_actual - sim_anterior2 >= 1:
                             
                             sim_anterior2 = simTime_actual
@@ -224,7 +211,7 @@ def main_control():
                     delta_simTime = simTime_actual - simTime_anterior
                     delta_realTime = realTime_actual - realTime_anterior
 
-        print('----------------------------Termine la ruta--------------------------')
+        print('----------------------------Finished Trayectory--------------------------')
         sys.stdout.write("\033[K") # Clear to the end of line
         sys.stdout.write("\033[F") # Cursor up one line
         rate.sleep()
@@ -233,4 +220,4 @@ if __name__ == '__main__':
 	try:
 		main_control()
 	except rospy.ROSInterruptException:
-		print('Nodo detenido')
+		print('Stoped node.')
