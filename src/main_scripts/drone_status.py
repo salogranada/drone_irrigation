@@ -3,7 +3,7 @@ import rospy
 import time
 import numpy as np
 from geometry_msgs.msg import *
-from std_msgs.msg import Float32, Float32MultiArray, String
+from std_msgs.msg import Float32, Float32MultiArray, String, Bool
 #from termcolor import colored
 
 #Drone Status Node
@@ -14,6 +14,8 @@ pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, pathTime, endPos_x, endPos_y, end
 simTime, realTime = 0, 0
 
 force, torque, tankMass, tankVolume, velocity = [],0,0,' ',0
+
+restartTank = False
 
 #Obtenemos la posicion del dron
 def dronePose_callback(msg):
@@ -70,9 +72,13 @@ def tankVolume_callback(msg):
 	global tankVolume
 	tankVolume = msg.data
 
+def callback_restart(msg):
+	global restartTank
+	restartTank = msg.data
+
 def info_status():
 	global pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, pathTime,  endPos_x, endPos_y, endPos_z
-	global simTime, realTime, force, torque, tankMass, tankVolume, velocity
+	global simTime, realTime, force, torque, tankMass, tankVolume, velocity, restartTank
 
 	rospy.init_node('Status_Node', anonymous=True)  # Inicia el nodo status
 
@@ -91,6 +97,7 @@ def info_status():
 	rospy.Subscriber("/PE/Drone/drone_status", Float32MultiArray, status_callback, tcp_nodelay=True)
 	#Estructura : [delta_realTime, delta_simTime]
 	rospy.Subscriber("PE/Drone/controller_time", Float32MultiArray, times_callback, tcp_nodelay=True)
+	rospy.Subscriber('/PE/Drone/restart', Bool, callback_restart)
 	rate = rospy.Rate(10)
 
 
@@ -103,11 +110,15 @@ def info_status():
 		mensaje = mensaje + '\n'
 		mensaje = mensaje + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
 		mensaje = mensaje + 'Motor Torque: ' + str(torque) + '\n'
-		mensaje = mensaje + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume +'\n'
+		mensaje = mensaje + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume + ' Tank Restart: ' + str(restartTank) +'\n'
 		mensaje = mensaje + '\n'
 		mensaje = mensaje + 'RealTime: ' + str(round(realTime,4)) +' simTime: ' + str(round(simTime,4)) + ' PathTime: ' + str(round(pathTime,3))
 		mensaje = mensaje + '\n \n'
-		print(mensaje)
+
+		if tankMass == 0:
+			print('tankMass == 0, program wont start')
+		else:
+			print(mensaje)
 		
 		time.sleep(1)
 

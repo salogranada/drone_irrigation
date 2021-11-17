@@ -4,4 +4,5 @@
     <node type="drone_status.py" name="droneStatus" pkg="drones_pkg" output="screen"/>
     <node type="variableMass4.py" name="variableMass" pkg="drones_pkg" output="screen"/>
 
+
 </launch>
