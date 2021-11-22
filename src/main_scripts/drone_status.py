@@ -99,9 +99,30 @@ def info_status():
 	rospy.Subscriber("PE/Drone/controller_time", Float32MultiArray, times_callback, tcp_nodelay=True)
 	rospy.Subscriber('/PE/Drone/restart', Bool, callback_restart)
 	rate = rospy.Rate(10)
+	rpm = 0
+	rpm_list = [0,0,0,0]
 
+	f = open("flight_data.txt", "w")
 
 	while not rospy.is_shutdown():
+
+		#RPM for each motor calculation. 
+		c = 0.6
+		e_d = 0.88 #diameter effectiveness
+		theta = 25 #blade twist angle (deg)
+		p = 1.225 #air density kg/m^3
+		R = (1.4974e-01)/2 #blade radio
+		k = 2*c/4*R #Motor-propeller Force Constant
+		C_T = (4/3)*k*theta*(1-(1-e_d)**3) - k*(np.sqrt(k*(k+1))- np.sqrt(k))*(1-(1-e_d)**2)
+
+		#T = (1/16)*p*np.pi*(R**4)*(e_d**4)*C_T*(rpm**2)
+
+		for motor in range(len(force)):
+			#print('motor #',motor)
+			#print('force #',force[motor])
+			rpm = np.sqrt(abs(force[motor])/((1/16)*p*np.pi*(R**4)*(e_d**4)*C_T))
+			rpm_list[motor] = rpm
+
 		mensaje = '_________________________________________________________ \n \n'
 		mensaje = mensaje + 'Pose Actual: ' + str(round(pos_x,4)) + ', ' + str(round(pos_y,4)) + ', ' + str(round(pos_z,4)) + ' Angulo Actual: ' + str(round(ang_x,3)) + ', ' + str(round(ang_y,3)) + ', ' + str(round(ang_z,3)) + '\n'
 		mensaje = mensaje + 'Pose Final: ' + str(round(endPos_x,3)) + ', ' + str(round(endPos_y,3)) + ', ' + str(round(endPos_z,3)) + '\n'
@@ -109,7 +130,8 @@ def info_status():
 		mensaje = mensaje + 'Rho: ' + str(round(rho,3)) + '\n'
 		mensaje = mensaje + '\n'
 		mensaje = mensaje + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
-		mensaje = mensaje + 'Motor Torque: ' + str(torque) + '\n'
+		mensaje = mensaje + 'Motor Torque: ' + str(torque) + '\n \n'
+		mensaje = mensaje + 'Motor RPM: ' + str(rpm_list) + '\n'
 		mensaje = mensaje + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume + ' Tank Restart: ' + str(restartTank) +'\n'
 		mensaje = mensaje + '\n'
 		mensaje = mensaje + 'RealTime: ' + str(round(realTime,4)) +' simTime: ' + str(round(simTime,4)) + ' PathTime: ' + str(round(pathTime,3))
@@ -119,10 +141,13 @@ def info_status():
 			print('tankMass == 0, program wont start')
 		else:
 			print(mensaje)
-		
+			f.write(str(force) + str(torque) + str(rpm_list))
+			
+	
 		time.sleep(1)
 
 		#rate.sleep()
+	f.close()
 
 if __name__== '__main__':
 	try:
