@@ -11,6 +11,7 @@ import os
 #Drone Status Node
 #Prints in terminal everything to monitor the drone movement
 #Calculates each motors RPM for ML trainning.
+#Saves data to file.
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
@@ -136,19 +137,19 @@ def info_status():
 			rpm_list[motor] = rpm
 
 		#Builds printed message in terminal
-		mensaje = '_________________________________________________________ \n \n'
-		mensaje = mensaje + 'Pose Actual: ' + str(round(pos_x,4)) + ', ' + str(round(pos_y,4)) + ', ' + str(round(pos_z,4)) + ' Angulo Actual: ' + str(round(ang_x,3)) + ', ' + str(round(ang_y,3)) + ', ' + str(round(ang_z,3)) + '\n'
-		mensaje = mensaje + 'Pose Final: ' + str(round(endPos_x,3)) + ', ' + str(round(endPos_y,3)) + ', ' + str(round(endPos_z,3)) + '   Path Vel: '+str(path_vel) + '\n'
-		mensaje = mensaje + '\n'
-		mensaje = mensaje + 'Rho: ' + str(round(rho,3)) + '  Route num: '+ str(route_num) +'\n'
-		mensaje = mensaje + '\n'
-		mensaje = mensaje + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
-		mensaje = mensaje + 'Motor Torque: ' + str(torque) + '\n \n'
-		mensaje = mensaje + 'Motor RPM: ' + str(rpm_list) + '\n \n'
-		mensaje = mensaje + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume + ' Tank Restart: ' + str(restartTank) +'\n'
-		mensaje = mensaje + '\n'
-		mensaje = mensaje + 'RealTime: ' + str(round(realTime,4)) +' simTime: ' + str(round(simTime,4)) + ' PathTime: ' + str(round(pathTime,3))
-		mensaje = mensaje + '\n \n'
+		terminal_msg = '_________________________________________________________ \n \n'
+		terminal_msg = terminal_msg + 'Pose Actual: ' + str(round(pos_x,4)) + ', ' + str(round(pos_y,4)) + ', ' + str(round(pos_z,4)) + ' Angulo Actual: ' + str(round(ang_x,3)) + ', ' + str(round(ang_y,3)) + ', ' + str(round(ang_z,3)) + '\n'
+		terminal_msg = terminal_msg + 'Pose Final: ' + str(round(endPos_x,3)) + ', ' + str(round(endPos_y,3)) + ', ' + str(round(endPos_z,3)) + '   Path Vel: '+str(path_vel) + '\n'
+		terminal_msg = terminal_msg + '\n'
+		terminal_msg = terminal_msg + 'Rho: ' + str(round(rho,3)) + '  Route num: '+ str(route_num) +'\n'
+		terminal_msg = terminal_msg + '\n'
+		terminal_msg = terminal_msg + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
+		terminal_msg = terminal_msg + 'Motor Torque: ' + str(torque) + '\n \n'
+		terminal_msg = terminal_msg + 'Motor RPM: ' + str(rpm_list) + '\n \n'
+		terminal_msg = terminal_msg + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume + ' Tank Restart: ' + str(restartTank) +'\n'
+		terminal_msg = terminal_msg + '\n'
+		terminal_msg = terminal_msg + 'RealTime: ' + str(round(realTime,4)) +' simTime: ' + str(round(simTime,4)) + ' PathTime: ' + str(round(pathTime,3))
+		terminal_msg = terminal_msg + '\n \n'
 
 		#Only print if the tank mass calculation is actually working.
 		if tankMass == 0:
@@ -156,7 +157,7 @@ def info_status():
 		elif tankMass == 'nan':
 			print('tankMass == nan, ERROR!')
 		else:
-			print(mensaje)
+			print(terminal_msg)
 			f.write(str(route_num) + '|' + str(force) +'|'+ str(torque)  +'|'+ str(rpm_list)+ '\n')
 	
 		time.sleep(1)
