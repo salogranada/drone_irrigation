@@ -89,7 +89,7 @@ def main_control():
     pub_euler = rospy.Publisher('/drone_nextEuler', Float32MultiArray, queue_size=10)
     pub_tank_volume = rospy.Publisher('/PE/Drone/tank_volume', String, queue_size=10)
     pub_axisforces = rospy.Publisher('/drone_axisForces', Float32MultiArray, queue_size=10)
-    pub_status = rospy.Publisher('/PE/Drone/drone_status', Float32MultiArray, queue_size=10) #Status structure: [rho, tiempito, Endpos]
+    pub_status = rospy.Publisher('/PE/Drone/drone_status', Float32MultiArray, queue_size=10) #Status structure: [rho, tiempito, Endpos, path_vel, route No.]
     pub_time = rospy.Publisher('PE/Drone/controller_time', Float32MultiArray, queue_size=10)
     pub_restart = rospy.Publisher('/PE/Drone/restart', Bool, queue_size=10)
 
@@ -126,6 +126,7 @@ def main_control():
 
         line = file.readline() #Reads first path
 
+        #Go over each line of the paths file
         while line != '':
             tiempo = []
             ruta = []
@@ -133,12 +134,12 @@ def main_control():
             
             linea = line.split('|')
 
-            print('lineaaa:   ', linea)
-
+            #Get each of the points in the path file
             ruta_list = linea[1].split(';')
             for i in range(len(ruta_list)):
                 ruta.append(ruta_list[i])
-
+            
+            #Get associated times to reach each of the points
             tiempo_list = linea[2].split(',')
             for i in range(len(tiempo_list)):
                 tiempo.append(float(tiempo_list[i]))
@@ -166,7 +167,7 @@ def main_control():
                         tiempito = tiempo[contador]
                         
                         coord_aux = coord.split(',')
-                        print('coord_aux:   ', coord_aux)
+                        #print('coord_aux:   ', coord_aux)
                         if coord_aux[0] != '':
                             coord_x = coord_aux[0]
                             coord_y = coord_aux[1]
@@ -229,7 +230,7 @@ def main_control():
 
                                     avance.data = [posTarget_x+paso_x, posTarget_y+paso_y, endPos[2]]
                                     avance_eu.data = [ang_x, ang_y, ang_z]
-                                    drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2]]
+                                    drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2], path_vel, float(linea[0])]
                                     controller_time.data = [delta_realTime, delta_simTime]
 
                                     pub_pose.publish(avance)
