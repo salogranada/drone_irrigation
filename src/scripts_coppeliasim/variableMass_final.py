@@ -24,7 +24,7 @@ def htank(h,t,a,A,c=1):
     #c -> constante de velocidad del fluido.
     #t -> Tiempo.
     g = 9.8 #m/s2
-    dhdt = -(a*c*np.sqrt(2*g*h))/A
+    dhdt = -(a*c*np.sqrt(2*g*abs(h)))/A
     return dhdt
 
 def mTank(dhdt,ATank,den):
@@ -72,74 +72,78 @@ class variableMass(object):
             print("Entro a 10L")
             if self.cont == 0:
                 self.simTimeIrrigation0 = self.simulationTime
+                dimTank = np.array([0.560,0.435,(0.010)/(0.560*0.435)],dtype=np.float16)
+                Q = 2.867e-5 #(m3/seg) Flow rate. 0.02867L/seg    
+                den = 1e6 #(g/m3) Water density.
+                tank10L = Tank(dimTank,Q,den)
+                tFinal = CaltimeSimulation(tank10L) #Time in seconds.
+                t = np.linspace(0,int(tFinal),int(tFinal)) #linspace with 5 seconds of excess
+                
+                h = odeint(htank,tank10L.h0,t,args=(tank10L.AHole,tank10L.ATank))
+                m = mTank(h,tank10L.ATank,den)
+                length = m.shape
+                info = np.zeros((length[0],3))
+                info[:,0] = h.reshape(-1)
+                info[:,1] = m.reshape(-1)
+                info[:,2] = t.reshape(-1)
+            
+                self.h = h
+                self.m = m
+                self.t = t
+                self.matrixValues = info
+
                 self.cont += 1
 
-            dimTank = np.array([0.560,0.435,(0.010)/(0.560*0.435)],dtype=np.float16)
-            Q = 2.867e-5 #(m3/seg) Flow rate. 0.02867L/seg    
-            den = 1e6 #(g/m3) Water density.
-            tank10L = Tank(dimTank,Q,den)
-            tFinal = CaltimeSimulation(tank10L) #Time in seconds.
-            t = np.linspace(0,int(tFinal+5),int(tFinal+5)) #linspace with 5 seconds of excess
-            h = odeint(htank,tank10L.h0,t,args=(tank10L.AHole,tank10L.ATank))
-            m = mTank(h,tank10L.ATank,den)
-            length = m.shape
-            info = np.zeros((length[0],3))
-            info[:,0] = h.reshape(-1)
-            info[:,1] = m.reshape(-1)
-            info[:,2] = t.reshape(-1)
             
-            self.h = h
-            self.m = m
-            self.t = t
-            self.matrixValues = info
 
             #Publicar
             actual_time = self.simulationTime - self.simTimeIrrigation0 #in seconds
-            print("El delta de tiempo es igual a ",actual_time)
+            #print("El delta de tiempo es igual a ",actual_time)
             idx = close_time_value(self.matrixValues[:,2],actual_time)
-            print("El tamaño de mi matriz es", self.matrixValues.shape)
-            print("Mi idx es igual a ", idx)
+            #print("El tamaño de mi matriz es", self.matrixValues.shape)
+            #print("Mi idx es igual a ", idx)
             self.pub.publish(self.matrixValues[idx,1])
-            print("Esta es la masa", self.matrixValues[idx,1])
-            print('\n')
+            #print("Esta es la masa", self.matrixValues[idx,1])
+            #print('\n')
 
         elif self.irrigationFlag == 'B15L': #Begins irrigation (15L).
             print("Entro a 15L")
             if self.cont == 0:
                 self.simTimeIrrigation0 = self.simulationTime
+                dimTank = np.array([0.560,0.435,(0.015)/(0.560*0.435)],dtype=np.float16)
+                Q = 2.867e-5 #(m3/seg) Flow rate. 0.02867L/seg
+                den = 1e6 #(g/m3) Water density.
+                tank15L = Tank(dimTank,Q,den)
+                tFinal = CaltimeSimulation(tank15L) #Time in seconds.
+                t = np.linspace(0,int(tFinal),int(tFinal)) #linspace with 5 seconds of excess
+                
+                h = odeint(htank,tank15L.h0,t,args=(tank15L.AHole,tank15L.ATank))
+                m = mTank(h,tank15L.ATank,den)
+            
+                length = m.shape
+                info = np.zeros((length[0],3))
+                info[:,0] = h.reshape(-1)
+                info[:,1] = m.reshape(-1)
+                info[:,2] = t.reshape(-1)
+            
+                self.h = h
+                self.m = m
+                self.t = t
+                self.matrixValues = info
+
                 self.cont += 1
 
-            dimTank = np.array([0.560,0.435,(0.015)/(0.560*0.435)],dtype=np.float16)
-            Q = 2.867e-5 #(m3/seg) Flow rate. 0.02867L/seg
-            den = 1e6 #(g/m3) Water density.
-            tank15L = Tank(dimTank,Q,den)
             
-            tFinal = CaltimeSimulation(tank15L) #Time in seconds.
-            t = np.linspace(0,int(tFinal+5),int(tFinal+5)) #linspace with 5 seconds of excess
-            
-            h = odeint(htank,tank15L.h0,t,args=(tank15L.AHole,tank15L.ATank))
-            m = mTank(h,tank15L.ATank,den)
-            
-            length = m.shape
-            info = np.zeros((length[0],3))
-            info[:,0] = h.reshape(-1)
-            info[:,1] = m.reshape(-1)
-            info[:,2] = t.reshape(-1)
-            
-            self.h = h
-            self.m = m
-            self.t = t
-            self.matrixValues = info
 
             #Publicar
             actual_time = self.simulationTime - self.simTimeIrrigation0 #in seconds
-            print("El delta de tiempo es igual a ",actual_time)
+            #print("El delta de tiempo es igual a ",actual_time)
             idx = close_time_value(self.matrixValues[:,2],actual_time)
-            print("El tamaño de mi matriz es", self.matrixValues.shape)
-            print("Mi idx es igual a ", idx)
+            #print("El tamaño de mi matriz es", self.matrixValues.shape)
+            #print("Mi idx es igual a ", idx)
             self.pub.publish(self.matrixValues[idx,1])
-            print("Esta es la masa", self.matrixValues[idx,1])
-            print('\n')
+            #print("Esta es la masa", self.matrixValues[idx,1])
+            #print('\n')
             
         
         #Assuming the flow rate of the Agras T30, and the box dimensions of Agras T30 (WxL)
@@ -147,113 +151,115 @@ class variableMass(object):
 
             if self.cont == 0:
                 self.simTimeIrrigation0 = self.simulationTime
-                self.cont += 1
+                dimTank = np.array([0.560,0.435,(0.020)/(0.560*0.435)],dtype=np.float16)
+                Q = 1.2e-4 #(m3/seg) Flow rate. 0.12L/seg
+                den = 1e6 #(g/m3) Water density.
+                tank20L = Tank(dimTank,Q,den)
+                tFinal = CaltimeSimulation(tank20L) #Time in seconds.
+                t = np.linspace(0,int(tFinal),int(tFinal)) #linspace with 5 seconds of excess
 
-            dimTank = np.array([0.560,0.435,(0.020)/(0.560*0.435)],dtype=np.float16)
-            Q = 1.2e-4 #(m3/seg) Flow rate. 0.12L/seg
-            den = 1e6 #(g/m3) Water density.
-            tank20L = Tank(dimTank,Q,den)
+                h = odeint(htank,tank20L.h0,t,args=(tank20L.AHole,tank20L.ATank))
+                m = mTank(h,tank20L.ATank,den)
             
-            tFinal = CaltimeSimulation(tank20L) #Time in seconds.
-            t = np.linspace(0,int(tFinal+5),int(tFinal+5)) #linspace with 5 seconds of excess
+                length = m.shape
+                info = np.zeros((length[0],3))
+                info[:,0] = h.reshape(-1)
+                info[:,1] = m.reshape(-1)
+                info[:,2] = t.reshape(-1)
             
-            h = odeint(htank,tank20L.h0,t,args=(tank20L.AHole,tank20L.ATank))
-            m = mTank(h,tank20L.ATank,den)
-            
-            length = m.shape
-            info = np.zeros((length[0],3))
-            info[:,0] = h.reshape(-1)
-            info[:,1] = m.reshape(-1)
-            info[:,2] = t.reshape(-1)
-            
-            self.h = h
-            self.m = m
-            self.t = t
-            self.matrixValues = info
+                self.h = h
+                self.m = m
+                self.t = t
+                self.matrixValues = info
+                
+                self.cont += 1
 
             #Publicar
             actual_time = self.simulationTime - self.simTimeIrrigation0 #in seconds
-            print("El delta de tiempo es igual a ",actual_time)
+            #print("El delta de tiempo es igual a ",actual_time)
             idx = close_time_value(self.matrixValues[:,2],actual_time)
-            print("El tamaño de mi matriz es", self.matrixValues.shape)
-            print("Mi idx es igual a ", idx)
+            #print("El tamaño de mi matriz es", self.matrixValues.shape)
+            #print("Mi idx es igual a ", idx)
             self.pub.publish(self.matrixValues[idx,1])
-            print("Esta es la masa", self.matrixValues[idx,1])
-            print('\n')
+            #print("Esta es la masa", self.matrixValues[idx,1])
+            #print('\n')
         
         elif self.irrigationFlag == 'B25L': #Begins irrigation (25L).
             
             if self.cont == 0:
                 self.simTimeIrrigation0 = self.simulationTime
+                dimTank = np.array([0.560,0.435,(0.025)/(0.560*0.435)],dtype=np.float16)
+                Q = 1.2e-4 #(m3/seg) Flow rate. 0.12L/seg
+                den = 1e6 #(g/m3) Water density.
+                tank25L = Tank(dimTank,Q,den)
+                tFinal = CaltimeSimulation(tank25L) #Time in seconds.
+                t = np.linspace(0,int(tFinal),int(tFinal)) #linspace with 5 seconds of excess
+
+                h = odeint(htank,tank25L.h0,t,args=(tank25L.AHole,tank25L.ATank))
+                m = mTank(h,tank25L.ATank,den)
+            
+                length = m.shape
+                info = np.zeros((length[0],3))
+                info[:,0] = h.reshape(-1)
+                info[:,1] = m.reshape(-1)
+                info[:,2] = t.reshape(-1)
+            
+                self.h = h
+                self.m = m
+                self.t = t
+                self.matrixValues = info
+                
                 self.cont += 1
             
-            dimTank = np.array([0.560,0.435,(0.025)/(0.560*0.435)],dtype=np.float16)
-            Q = 1.2e-4 #(m3/seg) Flow rate. 0.12L/seg
-            den = 1e6 #(g/m3) Water density.
-            tank25L = Tank(dimTank,Q,den)
             
-            tFinal = CaltimeSimulation(tank25L) #Time in seconds.
-            t = np.linspace(0,int(tFinal+5),int(tFinal+5)) #linspace with 5 seconds of excess
-            
-            h = odeint(htank,tank25L.h0,t,args=(tank25L.AHole,tank25L.ATank))
-            m = mTank(h,tank25L.ATank,den)
-            
-            length = m.shape
-            info = np.zeros((length[0],3))
-            info[:,0] = h.reshape(-1)
-            info[:,1] = m.reshape(-1)
-            info[:,2] = t.reshape(-1)
-            
-            self.h = h
-            self.m = m
-            self.t = t
-            self.matrixValues = info
 
             #Publicar
             actual_time = self.simulationTime - self.simTimeIrrigation0 #in seconds
-            print("El delta de tiempo es igual a ",actual_time)
+            #print("El delta de tiempo es igual a ",actual_time)
             idx = close_time_value(self.matrixValues[:,2],actual_time)
-            print("El tamaño de mi matriz es", self.matrixValues.shape)
-            print("Mi idx es igual a ", idx)
+            #print("El tamaño de mi matriz es", self.matrixValues.shape)
+            #print("Mi idx es igual a ", idx)
             self.pub.publish(self.matrixValues[idx,1])
-            print("Esta es la masa", self.matrixValues[idx,1])
-            print('\n')
+            #print("Esta es la masa", self.matrixValues[idx,1])
+            #print('\n')
         
         elif self.irrigationFlag == 'B30L': #Begins irrigation (30L).
             if self.cont == 0:
                 self.simTimeIrrigation0 = self.simulationTime
+                dimTank = np.array([0.560,0.435,(0.030)/(0.560*0.435)],dtype=np.float16)
+                Q = 1.2e-4 #(m3/seg) Flow rate. 0.12L/seg
+                den = 1e6 #(g/m3) Water density.
+                tank30L = Tank(dimTank,Q,den)
+                tFinal = CaltimeSimulation(tank30L) #Time in seconds.
+                t = np.linspace(0,int(tFinal),int(tFinal)) #linspace with 5 seconds of excess
+                
+                h = odeint(htank,tank30L.h0,t,args=(tank30L.AHole,tank30L.ATank))
+                m = mTank(h,tank30L.ATank,den)
+            
+                length = m.shape
+                info = np.zeros((length[0],3))
+                info[:,0] = h.reshape(-1)
+                info[:,1] = m.reshape(-1)
+                info[:,2] = t.reshape(-1)
+            
+                self.h = h
+                self.m = m
+                self.t = t
+                self.matrixValues = info
+
                 self.cont += 1
-            print("El tiempo inicial es ", self.simTimeIrrigation0)
-            dimTank = np.array([0.560,0.435,(0.030)/(0.560*0.435)],dtype=np.float16)
-            Q = 1.2e-4 #(m3/seg) Flow rate. 0.12L/seg
-            den = 1e6 #(g/m3) Water density.
-            tank30L = Tank(dimTank,Q,den)
+
             
-            tFinal = CaltimeSimulation(tank30L) #Time in seconds.
-            t = np.linspace(0,int(tFinal+5),int(tFinal+5)) #linspace with 5 seconds of excess
-            h = odeint(htank,tank30L.h0,t,args=(tank30L.AHole,tank30L.ATank))
-            m = mTank(h,tank30L.ATank,den)
-            
-            length = m.shape
-            info = np.zeros((length[0],3))
-            info[:,0] = h.reshape(-1)
-            info[:,1] = m.reshape(-1)
-            info[:,2] = t.reshape(-1)
-            
-            self.h = h
-            self.m = m
-            self.t = t
-            self.matrixValues = info
 
             #Publicar
             actual_time = self.simulationTime - self.simTimeIrrigation0 #in seconds
-            print("El delta de tiempo es igual a ",actual_time)
+            #print("El delta de tiempo es igual a ",actual_time)
             idx = close_time_value(self.matrixValues[:,2],actual_time)
-            print("El tamaño de mi matriz es", self.matrixValues.shape)
-            print("Mi idx es igual a ", idx)
+            #print("El tamaño de mi matriz es", self.matrixValues.shape)
+            #print("Mi idx es igual a ", idx)
             self.pub.publish(self.matrixValues[idx,1])
-            print("Esta es la masa", self.matrixValues[idx,1])
-            print('\n')
+            #print("Esta es la masa", self.matrixValues[idx,1])
+            #print('\n')
 
 
             
