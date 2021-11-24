@@ -139,26 +139,24 @@ def info_status():
 		#Builds printed message in terminal
 		terminal_msg = '_________________________________________________________ \n \n'
 		terminal_msg = terminal_msg + 'Pose Actual: ' + str(round(pos_x,4)) + ', ' + str(round(pos_y,4)) + ', ' + str(round(pos_z,4)) + ' Angulo Actual: ' + str(round(ang_x,3)) + ', ' + str(round(ang_y,3)) + ', ' + str(round(ang_z,3)) + '\n'
-		terminal_msg = terminal_msg + 'Pose Final: ' + str(round(endPos_x,3)) + ', ' + str(round(endPos_y,3)) + ', ' + str(round(endPos_z,3)) + '   Path Vel: '+str(path_vel) + '\n'
+		terminal_msg = terminal_msg + 'Pose Final: ' + str(round(endPos_x,3)) + ', ' + str(round(endPos_y,3)) + ', ' + str(round(endPos_z,3)) + '   Path Vel: '+str(round(path_vel,3)) + '\n'
 		terminal_msg = terminal_msg + '\n'
-		terminal_msg = terminal_msg + 'Rho: ' + str(round(rho,3)) + '  Route num: '+ str(route_num) +'\n'
-		terminal_msg = terminal_msg + '\n'
+		terminal_msg = terminal_msg + 'Rho: ' + str(round(rho,3)) + '  Route num: '+ str(route_num) +'\n \n'
+
 		terminal_msg = terminal_msg + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
 		terminal_msg = terminal_msg + 'Motor Torque: ' + str(torque) + '\n \n'
 		terminal_msg = terminal_msg + 'Motor RPM: ' + str(rpm_list) + '\n \n'
-		terminal_msg = terminal_msg + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume + ' Tank Restart: ' + str(restartTank) +'\n'
-		terminal_msg = terminal_msg + '\n'
+		terminal_msg = terminal_msg + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume + ' Tank Restart: ' + str(restartTank) +'\n \n'
+
 		terminal_msg = terminal_msg + 'RealTime: ' + str(round(realTime,4)) +' simTime: ' + str(round(simTime,4)) + ' PathTime: ' + str(round(pathTime,3))
 		terminal_msg = terminal_msg + '\n \n'
 
 		#Only print if the tank mass calculation is actually working.
 		if tankMass == 0:
 			print('tankMass == 0, program wont start')
-		elif tankMass == 'nan':
-			print('tankMass == nan, ERROR!')
 		else:
 			print(terminal_msg)
-			f.write(str(route_num) + '|' + str(force) +'|'+ str(torque)  +'|'+ str(rpm_list)+ '\n')
+			f.write(str(route_num) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(force) + '|'+ str(torque)  +'|'+ str(rpm_list)+ '\n')
 	
 		time.sleep(1)
 	f.close()

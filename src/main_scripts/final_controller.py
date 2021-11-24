@@ -4,6 +4,7 @@ import sys
 import os
 import numpy as np
 from std_msgs.msg import Float32MultiArray, Float32, String, Bool
+import sim
 
 #Drone control guided by particle in simulation.
 #Set the list of points in the trajectory and time the drone must reach each point.
@@ -12,6 +13,21 @@ from std_msgs.msg import Float32MultiArray, Float32, String, Bool
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
+
+def connect(port):
+    # Establece la conexion a VREP
+    # port debe coincidir con el puerto de conexion en VREP
+    # retorna el numero de cliente o -1 si no puede establecer conexion
+    sim.simxFinish(-1) # just in case, close all opened connections\n",
+    clientID=sim.simxStart('127.0.0.1',port,True,True,2000,5) # Conectarse
+    if clientID == 0: print("conectado a", port)
+    else: print("No se pudo conectar")
+    return clientID
+
+#Conectarse al servidor de VREP
+clientID = connect(19998)
+
+sim.simxStartSimulation(clientID,sim.simx_opmode_oneshot)
 
 pos_x, pos_y, pos_z, theta, deltaX, deltaY, posTarget_x,posTarget_y,posTarget_z = 0, 0, 0, 0, 0, 0, 0, 0, 0
 ang_x, ang_y, ang_z = 0,0,0
@@ -240,7 +256,7 @@ def main_control():
                                     pub_time.publish(controller_time)
                                     pub_tank_volume.publish(tankVolume)
 
-                                print('path_vel: ' + str(round(path_vel,4)) + '  droneVel: ' + str(round(droneVel,4)) + '  ruta restante: ' + str(round(len(ruta)-contador,3)) )
+                                print('  droneVel: ' + str(round(droneVel,4)) + '  ruta restante: ' + str(round(len(ruta)-contador,3)) )
                                 sys.stdout.write("\033[K") # Clear to the end of line
                                 sys.stdout.write("\033[F") # Cursor up one line
 
@@ -254,9 +270,21 @@ def main_control():
                 print('Wait till drone reaches particle before starting new path... ', round(target_rho,3))
                 sys.stdout.write("\033[K") # Clear to the end of line
                 sys.stdout.write("\033[F") # Cursor up one line
+                #restartTank = True
+                #pub_restart.publish(restartTank)
+            
+            print('++++++++++++++++++++++STOP SIMULATION++++++++++++++++++')
+            sim.simxStopSimulation(clientID,sim.simx_opmode_oneshot)
+                
             restartTank = True
-            line = file.readline() #Read next path
             pub_restart.publish(restartTank)
+            
+            if restartTank == True:
+                    print('STARTING NEW SIMULATION')
+                    start = sim.simxStartSimulation(clientID,sim.simx_opmode_oneshot)
+                    print('++++++++++++++++++++++++++++++++++++++++++++++++++',start)
+            line = file.readline() #Read next path
+            
 
 
         print('----------------------------Finished Trayectory--------------------------')
