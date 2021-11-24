@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
  
 import rospy
-from std_msgs.msg import String,Float32,Int32
+from std_msgs.msg import String,Float32,Int32, Bool
 
 import numpy as np
 from scipy.integrate import odeint
@@ -45,11 +45,13 @@ class variableMass(object):
     
     def __init__(self):
         self.simulationTime = 0
+        self.restartTank = False
         self.simTimeIrrigation0 = 0 #when the irrigation begins
-        self.simulationTime_sub = rospy.Subscriber('/simulationTime',Int32,self.callback_simulationTime)
+        self.simulationTime_sub = rospy.Subscriber('/simulationTime',Float32,self.callback_simulationTime)
         self.pub = rospy.Publisher('/currentMass', Float32,queue_size=50)
         self.irrigationFlag = 'initial'
-        self.irrigationFlag_sub = rospy.Subscriber('/irrigation_flag', String, self.callback_activation)
+        self.irrigationFlag_sub = rospy.Subscriber('/PE/Drone/tank_volume', String, self.callback_activation)
+        self.restart = rospy.Subscriber('/PE/Drone/restart', Bool, self.callback_restart)
         self.matrixValues = np.zeros((2,3))
         self.h = 1
         self.m = 0
@@ -60,13 +62,17 @@ class variableMass(object):
     ###############################################################################################
     ####Callbacks####
     ###############################################################################################
+    def callback_restart(self,dataRestart):
+        self.restartTank = dataRestart.data
 
     def callback_simulationTime(self,dataTime):
         self.simulationTime = dataTime.data
-        print("El tiempo actual es",dataTime.data)
+        #print("El tiempo actual es",dataTime.data)
     
     def callback_activation(self,dataFlag):
         self.irrigationFlag = dataFlag.data
+        if self.restartTank == True:
+            self.cont = 0
         #Assuming the flow rate of the Agras MG-1, and the box dimensions of Agras T30 (WxL)
         if self.irrigationFlag == 'B10L': #Begins irrigation (Default 10L).
             #print("Entro a 10L")
