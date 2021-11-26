@@ -5,6 +5,7 @@ import os
 import numpy as np
 from std_msgs.msg import Float32MultiArray, Float32, String, Bool
 import sim
+import time
 
 #Drone control guided by particle in simulation.
 #Set the list of points in the trajectory and time the drone must reach each point.
@@ -27,7 +28,6 @@ def connect(port):
 #Conectarse al servidor de VREP
 clientID = connect(19998)
 
-sim.simxStartSimulation(clientID,sim.simx_opmode_oneshot)
 
 pos_x, pos_y, pos_z, theta, deltaX, deltaY, posTarget_x,posTarget_y,posTarget_z = 0, 0, 0, 0, 0, 0, 0, 0, 0
 ang_x, ang_y, ang_z = 0,0,0
@@ -272,17 +272,13 @@ def main_control():
                 sys.stdout.write("\033[F") # Cursor up one line
                 #restartTank = True
                 #pub_restart.publish(restartTank)
-            
-            print('++++++++++++++++++++++STOP SIMULATION++++++++++++++++++')
-            sim.simxStopSimulation(clientID,sim.simx_opmode_oneshot)
                 
             restartTank = True
             pub_restart.publish(restartTank)
+
+            print('WAIT 10 SECONDS')
+            time.sleep(15)
             
-            if restartTank == True:
-                    print('STARTING NEW SIMULATION')
-                    start = sim.simxStartSimulation(clientID,sim.simx_opmode_oneshot)
-                    print('++++++++++++++++++++++++++++++++++++++++++++++++++',start)
             line = file.readline() #Read next path
             
 
