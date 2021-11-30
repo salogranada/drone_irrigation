@@ -23,7 +23,8 @@ simTime, realTime = 0, 0
 force, torque, tankMass, tankVolume, velocity = [],0,0,' ',0
 
 restartTank = False
-path_vel, route_num = 0,0
+path_vel, route_num, missing_points = 0,0,0
+droneVel = 0
 
 #Real-time drone position callback
 def dronePose_callback(msg):
@@ -43,15 +44,17 @@ def droneOrientation_callback(msg):
     ang_z = msg.data[2]
     return ang_x, ang_y, ang_z
 
-#Estructure : [rho, pathTime, EndPos, path_vel, route No.]
+#Estructure : [rho, pathTime, EndPos, path_vel, route No., missing_points, dronevel]
 def status_callback(msg):
-	global rho, pathTime, endPos_x, endPos_y, endPos_z, path_vel, route_num
+	global rho, pathTime, endPos_x, endPos_y, endPos_z, path_vel, route_num, missing_points, droneVel
 	
 	rho =  msg.data[0]
 	pathTime = msg.data[1]
 	endPos_x, endPos_y, endPos_z = msg.data[2], msg.data[3], msg.data[4]
 	path_vel = msg.data[5]
 	route_num = msg.data[6]
+	missing_points = msg.data[7]
+	droneVel = msg.data[8]
 
 #Estructure : [delta_realTime, delta_simTime]
 def times_callback(msg):
@@ -89,8 +92,8 @@ def callback_restart(msg):
 #Prints into terminal all information requiered for monitoring the drone.
 #Also writes into file forces, torques and RPMs for ML model further trainning.
 def info_status():
-	global pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, pathTime,  endPos_x, endPos_y, endPos_z
-	global simTime, realTime, force, torque, tankMass, tankVolume, velocity, restartTank, path_vel, route_num
+	global pos_x, pos_y, pos_z, ang_x, ang_y, ang_z, rho, pathTime,  endPos_x, endPos_y, endPos_z, droneVel
+	global simTime, realTime, force, torque, tankMass, tankVolume, velocity, restartTank, path_vel, route_num, missing_points
 
 	rospy.init_node('Status_Node', anonymous=True)  # Inicia el nodo status
 
@@ -103,7 +106,7 @@ def info_status():
 	rospy.Subscriber("/drone_pose", Float32MultiArray, dronePose_callback, tcp_nodelay=True)
 	rospy.Subscriber("/drone_orientation", Float32MultiArray, droneOrientation_callback, tcp_nodelay=True)
 
-	#Estructure : [rho, pathTime, Endpos, path_vel, route No.]
+	#Estructure : [rho, pathTime, Endpos, path_vel, route No., missing_points, dronevel]
 	rospy.Subscriber("/PE/Drone/drone_status", Float32MultiArray, status_callback, tcp_nodelay=True)
 	#Estructure : [delta_realTime, delta_simTime]
 	rospy.Subscriber("PE/Drone/controller_time", Float32MultiArray, times_callback, tcp_nodelay=True)
@@ -115,6 +118,7 @@ def info_status():
 	scriptDir = os.path.dirname(__file__)
 	flight_data = scriptDir +'/' + "flight_data.txt"
 	f = open(flight_data, "w")
+	f.write('route_num|missing_points|simTime|tankMass|force_array|torque_array|rpm_list|droneVel \n')
 
 	while not rospy.is_shutdown():
 
@@ -137,15 +141,15 @@ def info_status():
 			rpm_list[motor] = rpm
 
 		#Builds printed message in terminal
-		terminal_msg = '_________________________________________________________ \n \n'
+		terminal_msg = '__________________________________________________________________ \n \n'
 		terminal_msg = terminal_msg + 'Pose Actual: ' + str(round(pos_x,4)) + ', ' + str(round(pos_y,4)) + ', ' + str(round(pos_z,4)) + ' Angulo Actual: ' + str(round(ang_x,3)) + ', ' + str(round(ang_y,3)) + ', ' + str(round(ang_z,3)) + '\n'
-		terminal_msg = terminal_msg + 'Pose Final: ' + str(round(endPos_x,3)) + ', ' + str(round(endPos_y,3)) + ', ' + str(round(endPos_z,3)) + '   Path Vel: '+str(round(path_vel,3)) + '\n'
-		terminal_msg = terminal_msg + '\n'
-		terminal_msg = terminal_msg + 'Rho: ' + str(round(rho,3)) + '  Route num: '+ str(route_num) +'\n \n'
+		terminal_msg = terminal_msg + 'Pose Final: ' + str(round(endPos_x,3)) + ', ' + str(round(endPos_y,3)) + ', ' + str(round(endPos_z,3)) + '   Path Vel: '+str(round(path_vel,3)) + '\n \n'
+		terminal_msg = terminal_msg + 'Rho: ' + str(round(rho,3)) + '  Route num: '+ str(route_num) + '  Missing_points: '+ str(missing_points)  +'\n \n'
+		terminal_msg = terminal_msg + 'Drone_Vel: ' + str(round(droneVel,3)) + '\n \n'
 
 		terminal_msg = terminal_msg + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
 		terminal_msg = terminal_msg + 'Motor Torque: ' + str(torque) + '\n \n'
-		terminal_msg = terminal_msg + 'Motor RPM: ' + str(rpm_list) + '\n \n'
+		terminal_msg = terminal_msg + 'Motor RPM: ' + str(rpm_list) +'\n \n'
 		terminal_msg = terminal_msg + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume + ' Tank Restart: ' + str(restartTank) +'\n \n'
 
 		terminal_msg = terminal_msg + 'RealTime: ' + str(round(realTime,4)) +' simTime: ' + str(round(simTime,4)) + ' PathTime: ' + str(round(pathTime,3))
@@ -156,7 +160,7 @@ def info_status():
 			print('tankMass == 0, program wont start')
 		else:
 			print(terminal_msg)
-			f.write(str(route_num) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(force) + '|'+ str(torque)  +'|'+ str(rpm_list)+ '\n')
+			f.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(force) + '|'+ str(torque)  +'|'+ str(rpm_list)+ '|' + str(droneVel) +'\n')
 	
 		time.sleep(1)
 	f.close()

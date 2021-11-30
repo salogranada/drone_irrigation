@@ -215,10 +215,25 @@ def main_control():
                             v_x = deltaX/tiempito    
                             v_y = deltaY/tiempito
 
+                            #Distance to target (particle)
+                            target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
+
                             #While we reach the point (with certain error), keep moving.
                             while rho > 0.1:
 
                                 actualDronePose = pos_x
+
+                                target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
+
+                                #If drone went out of control and lost the target. Restart.
+                                if target_rho > 3:
+                                    print('++++++++++++++++++++++++ Target too far... Restarting simulation')
+                                    restartTank = True
+                                    pub_restart.publish(restartTank)
+                                    time.sleep(8)
+                                    restartTank = False
+                                    pub_restart.publish(restartTank)
+                                    break
 
                                 #pub_tank_volume.publish(tankVolume) #Select tank volume.
                                 simTime_actual = simTime
@@ -235,6 +250,8 @@ def main_control():
                                 paso_x = v_x #+ vel_adjust_x
                                 paso_y = v_y #+ vel_adjust_y
 
+                                missing_points = len(ruta)-contador #How many points missing till finishing path
+
                                 #Only when 1 second has passed in simulation, publish the new position.
                                 #Simulation con go faster than real time and still behave as supposed.
                                 if simTime_actual - sim_anterior2 >= 1:
@@ -246,7 +263,7 @@ def main_control():
 
                                     avance.data = [posTarget_x+paso_x, posTarget_y+paso_y, endPos[2]]
                                     avance_eu.data = [ang_x, ang_y, ang_z]
-                                    drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2], path_vel, float(linea[0])]
+                                    drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2], path_vel, float(linea[0]), missing_points, droneVel] #Estructure : [rho, pathTime, EndPos, path_vel, route No., missing_points, dronevel]
                                     controller_time.data = [delta_realTime, delta_simTime]
 
                                     pub_pose.publish(avance)
@@ -256,7 +273,7 @@ def main_control():
                                     pub_time.publish(controller_time)
                                     pub_tank_volume.publish(tankVolume)
 
-                                print('  droneVel: ' + str(round(droneVel,4)) + '  ruta restante: ' + str(round(len(ruta)-contador,3)) )
+                                print('Target_RHO: ' + str(round(target_rho,3)) )
                                 sys.stdout.write("\033[K") # Clear to the end of line
                                 sys.stdout.write("\033[F") # Cursor up one line
 
@@ -264,7 +281,7 @@ def main_control():
                             delta_realTime = realTime_actual - realTime_anterior
             
             #Wait till drone reaches particle before starting new path...
-            target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
+            
             while target_rho > 0.08:
                 target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
                 print('Wait till drone reaches particle before starting new path... ', round(target_rho,3))
@@ -276,10 +293,11 @@ def main_control():
             restartTank = True
             pub_restart.publish(restartTank)
 
-            print('WAIT 10 SECONDS')
-            time.sleep(15)
+            print('--------------------------WAIT 10 SECONDS--------------------')
+            time.sleep(10)
             
             line = file.readline() #Read next path
+            print('**************************Read next line*********************')
             
 
 
