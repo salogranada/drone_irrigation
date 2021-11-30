@@ -256,6 +256,10 @@ def main_control():
                                 #Simulation con go faster than real time and still behave as supposed.
                                 if simTime_actual - sim_anterior2 >= 1:
 
+                                    print('Publishing correctly    cuadrito')
+                                    sys.stdout.write("\033[K") # Clear to the end of line
+                                    sys.stdout.write("\033[F") # Cursor up one line
+
                                     droneVel = actualDronePose - lastDronePose
                                     lastDronePose = actualDronePose
                                     
@@ -263,15 +267,16 @@ def main_control():
 
                                     avance.data = [posTarget_x+paso_x, posTarget_y+paso_y, endPos[2]]
                                     avance_eu.data = [ang_x, ang_y, ang_z]
-                                    drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2], path_vel, float(linea[0]), missing_points, droneVel] #Estructure : [rho, pathTime, EndPos, path_vel, route No., missing_points, dronevel]
                                     controller_time.data = [delta_realTime, delta_simTime]
 
                                     pub_pose.publish(avance)
                                     pub_euler.publish(avance_eu)
                                     #pub_axisforces.publish(axisForces)
-                                    pub_status.publish(drone_status)
                                     pub_time.publish(controller_time)
                                     pub_tank_volume.publish(tankVolume)
+
+                                drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2], path_vel, float(linea[0]), missing_points, droneVel] #Estructure : [rho, pathTime, EndPos, path_vel, route No., missing_points, dronevel]
+                                pub_status.publish(drone_status)
 
                                 print('Target_RHO: ' + str(round(target_rho,3)) )
                                 sys.stdout.write("\033[K") # Clear to the end of line
