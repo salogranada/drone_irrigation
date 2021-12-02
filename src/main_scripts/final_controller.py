@@ -15,20 +15,6 @@ import time
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
 
-def connect(port):
-    # Establece la conexion a VREP
-    # port debe coincidir con el puerto de conexion en VREP
-    # retorna el numero de cliente o -1 si no puede establecer conexion
-    sim.simxFinish(-1) # just in case, close all opened connections\n",
-    clientID=sim.simxStart('127.0.0.1',port,True,True,2000,5) # Conectarse
-    if clientID == 0: print("conectado a", port)
-    else: print("No se pudo conectar")
-    return clientID
-
-#Conectarse al servidor de VREP
-clientID = connect(19998)
-
-
 pos_x, pos_y, pos_z, theta, deltaX, deltaY, posTarget_x,posTarget_y,posTarget_z = 0, 0, 0, 0, 0, 0, 0, 0, 0
 ang_x, ang_y, ang_z = 0,0,0
 
@@ -104,7 +90,7 @@ def main_control():
     pub_pose = rospy.Publisher('/drone_nextPose', Float32MultiArray, queue_size=10)
     pub_euler = rospy.Publisher('/drone_nextEuler', Float32MultiArray, queue_size=10)
     pub_tank_volume = rospy.Publisher('/PE/Drone/tank_volume', String, queue_size=10)
-    pub_axisforces = rospy.Publisher('/drone_axisForces', Float32MultiArray, queue_size=10)
+    #pub_axisforces = rospy.Publisher('/drone_axisForces', Float32MultiArray, queue_size=10)
     pub_status = rospy.Publisher('/PE/Drone/drone_status', Float32MultiArray, queue_size=10) #Status structure: [rho, tiempito, Endpos, path_vel, route No.]
     pub_time = rospy.Publisher('PE/Drone/controller_time', Float32MultiArray, queue_size=10)
     pub_restart = rospy.Publisher('/PE/Drone/restart', Bool, queue_size=10)
@@ -118,7 +104,7 @@ def main_control():
     rospy.Subscriber("/drone_orientation", Float32MultiArray, droneOrientation_callback, tcp_nodelay=True)
 
     #paths_file = input('Input paths file (no extention) >')
-    paths_file = 'path_v1'
+    paths_file = 'path_v3'
     scriptDir = os.path.dirname(__file__)
     paths_file = scriptDir +'/' + paths_file + '.txt'
     file = open(paths_file)
@@ -225,16 +211,6 @@ def main_control():
 
                                 target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
 
-                                #If drone went out of control and lost the target. Restart.
-                                if target_rho > 3:
-                                    print('++++++++++++++++++++++++ Target too far... Restarting simulation')
-                                    restartTank = True
-                                    pub_restart.publish(restartTank)
-                                    time.sleep(8)
-                                    restartTank = False
-                                    pub_restart.publish(restartTank)
-                                    break
-
                                 #pub_tank_volume.publish(tankVolume) #Select tank volume.
                                 simTime_actual = simTime
                                 realTime_actual = realTime
@@ -252,35 +228,53 @@ def main_control():
 
                                 missing_points = len(ruta)-contador #How many points missing till finishing path
 
+                                if simTime_actual - sim_anterior2 < 0:
+                                    sim_anterior2 = 0
+
+                                print('sim_anterior2: ', round(sim_anterior2,4), round(simTime_actual - sim_anterior2,3))
+                                sys.stdout.write("\033[K") # Clear to the end of line
+                                sys.stdout.write("\033[F") # Cursor up one line
+
                                 #Only when 1 second has passed in simulation, publish the new position.
                                 #Simulation con go faster than real time and still behave as supposed.
                                 if simTime_actual - sim_anterior2 >= 1:
 
-                                    print('Publishing correctly    cuadrito')
+                                    print('Publishing correctly                      cuadrito')
                                     sys.stdout.write("\033[K") # Clear to the end of line
                                     sys.stdout.write("\033[F") # Cursor up one line
 
                                     droneVel = actualDronePose - lastDronePose
                                     lastDronePose = actualDronePose
                                     
-                                    sim_anterior2 = simTime_actual
-
                                     avance.data = [posTarget_x+paso_x, posTarget_y+paso_y, endPos[2]]
                                     avance_eu.data = [ang_x, ang_y, ang_z]
-                                    controller_time.data = [delta_realTime, delta_simTime]
 
                                     pub_pose.publish(avance)
                                     pub_euler.publish(avance_eu)
-                                    #pub_axisforces.publish(axisForces)
-                                    pub_time.publish(controller_time)
                                     pub_tank_volume.publish(tankVolume)
 
-                                drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2], path_vel, float(linea[0]), missing_points, droneVel] #Estructure : [rho, pathTime, EndPos, path_vel, route No., missing_points, dronevel]
-                                pub_status.publish(drone_status)
+                                    sim_anterior2 = simTime_actual
+                                    
+                                controller_time.data = [delta_realTime, delta_simTime]
 
-                                print('Target_RHO: ' + str(round(target_rho,3)) )
-                                sys.stdout.write("\033[K") # Clear to the end of line
-                                sys.stdout.write("\033[F") # Cursor up one line
+                                drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2], path_vel, float(linea[0]), missing_points, droneVel,target_rho] #Estructure : [rho, pathTime, EndPos, path_vel, route No., missing_points, dronevel,target_rho]
+                                pub_status.publish(drone_status)
+                                pub_time.publish(controller_time)
+
+                                #If drone went out of control and lost the target. Restart.
+                                if target_rho > 3:
+                                    print('++++++++++++++++++++++++ Target too far... Restarting simulation')
+                                    restartTank = True
+                                    pub_restart.publish(restartTank)
+                                    time.sleep(8)
+                                    restartTank = False
+                                    pub_restart.publish(restartTank)
+                                    sim_anterior2 = 0
+                                    break
+                                
+                                #print('Target_RHO: ' + str(round(target_rho,3)) )
+                                #sys.stdout.write("\033[K") # Clear to the end of line
+                                #sys.stdout.write("\033[F") # Cursor up one line
 
                             delta_simTime = simTime_actual - simTime_anterior
                             delta_realTime = realTime_actual - realTime_anterior
@@ -289,6 +283,7 @@ def main_control():
             
             while target_rho > 0.08:
                 target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
+                sim_anterior2 = 0
                 print('Wait till drone reaches particle before starting new path... ', round(target_rho,3))
                 sys.stdout.write("\033[K") # Clear to the end of line
                 sys.stdout.write("\033[F") # Cursor up one line
@@ -298,7 +293,7 @@ def main_control():
             restartTank = True
             pub_restart.publish(restartTank)
 
-            print('--------------------------WAIT 10 SECONDS--------------------')
+            print('                           WAIT 10 SECONDS                  -')
             time.sleep(10)
             
             line = file.readline() #Read next path

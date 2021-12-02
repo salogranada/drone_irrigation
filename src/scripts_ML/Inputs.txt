@@ -1,0 +1,12 @@
+VelProm YA
+NumCambioDireccion YA
+TiempoTotal
+WaterComsum YA
+DistanTotal YA
+TorqueProm(Motor1,2,3,4) YA
+RevoluMinuto(Motor1,2,3,4) YA
+Fuerza(Motor1,2,3,4) YA
+errorPromDistanParticula (Que tan lejos esta el dron de la particula) YA
+errorPromVelParticula YA
+
+Energia YA
