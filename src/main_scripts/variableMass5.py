@@ -7,6 +7,8 @@ import numpy as np
 from scipy.integrate import odeint
 import math
 
+#Author: Juan Sebastían Murcia Ramirez
+#Email: js.murcia@uniandes.edu.co
 
 class Tank:
     def __init__(self,dimTank,Q,den):

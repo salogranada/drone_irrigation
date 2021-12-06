@@ -6,7 +6,8 @@ import random
 import numpy as np
 import sim
 
-
+#Author: Juan Sebastían Murcia Ramirez
+#Email: js.murcia@uniandes.edu.co
 
 
 class windCity():
