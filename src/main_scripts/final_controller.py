@@ -159,6 +159,7 @@ def main_control():
                         pub_tank_volume.publish(tankVolume)
                         pub_restart.publish(restartTank)
                         time.sleep(2)
+                        simTime_anterior = 0
                         if tankMass != 0:
                             init = True
                             break
@@ -273,6 +274,7 @@ def main_control():
                                     time.sleep(3)
                                     sim_anterior2 = 0
                                     target_rho = 0
+                                    simTime_anterior = 0
                                     break
 
                                 #If TARGET went out of control and lost the WAYPOINT. Restart.
@@ -286,6 +288,7 @@ def main_control():
                                     time.sleep(3)
                                     sim_anterior2 = 0
                                     target_rho = 0
+                                    simTime_anterior = 0
                                     break
 
 

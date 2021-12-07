@@ -171,7 +171,7 @@ def info_status():
 			error_target_dist = target_rho
 			f.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(force) + '|'+ str(torque)  +'|'+ str(rpm_list)+ '|' + str(droneVel) + '|' + str(error_target_vel) + '|' + str(error_target_dist) +'\n')
 			if simTime < 0:
-				error_file.write('In Route: ' + str(route_num)+ ' In point: ' + str(missing_points) + ' SimTime: ' + str(round(simTime,4)) +  ' |Negative Simtime \n')
+				error_file.write('In Route: ' + str(route_num)+ ' In point: ' + str(missing_points) + ' SimTime: ' + str(round(simTime,4)) + ' TankMass: ' + str(round(tankMass,4))+  ' |Negative Simtime \n')
 			if rho > 15:
 				error_file.write('In Route: ' + str(route_num)+ ' In point: ' + str(missing_points) + ' SimTime: ' + str(round(simTime,4)) + ' RHO: ' + str(round(rho,4)) + ' |TARGET out of control and lost the WAYPOINT \n')
 			elif target_rho > 2:
