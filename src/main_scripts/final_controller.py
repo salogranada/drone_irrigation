@@ -90,7 +90,6 @@ def main_control():
     pub_pose = rospy.Publisher('/drone_nextPose', Float32MultiArray, queue_size=10)
     pub_euler = rospy.Publisher('/drone_nextEuler', Float32MultiArray, queue_size=10)
     pub_tank_volume = rospy.Publisher('/PE/Drone/tank_volume', String, queue_size=10)
-    #pub_axisforces = rospy.Publisher('/drone_axisForces', Float32MultiArray, queue_size=10)
     pub_status = rospy.Publisher('/PE/Drone/drone_status', Float32MultiArray, queue_size=10) #Status structure: [rho, tiempito, Endpos, path_vel, route No.]
     pub_time = rospy.Publisher('PE/Drone/controller_time', Float32MultiArray, queue_size=10)
     pub_restart = rospy.Publisher('/PE/Drone/restart', Bool, queue_size=10)
@@ -119,7 +118,6 @@ def main_control():
     avance_eu = Float32MultiArray()
     drone_status = Float32MultiArray()
     controller_time = Float32MultiArray()
-    #axisForces = Float32MultiArray()
     tankVolume = String()
     
     tankVolume.data = 'B10L' #Volume of the water tank.
@@ -150,8 +148,6 @@ def main_control():
             for coord in ruta:
                 if contador < len(tiempo): #Go through each of the times in the list.
                     print('Waiting for variableMass...')
-                    #sys.stdout.write("\033[K") # Clear to the end of line
-                    #sys.stdout.write("\033[F") # Cursor up one line
 
                     while tankMass == 0 or restartTank == True:
                         init = False 
@@ -164,8 +160,6 @@ def main_control():
                             init = True
                             break
 
-                    #init = True
-
                     #If tank mass is already calculated, we can start.
                     if init == True:
                         tiempito = tiempo[contador]
@@ -176,7 +170,6 @@ def main_control():
                             coord_x = coord_aux[0]
                             coord_y = coord_aux[1]
                             coord_z = coord_aux[2]
-                            #endPos_theta = np.arctan2(float(coord_y), float(coord_x))
                             endPos = [float(coord_x), float(coord_y), float(coord_z) ] # [X. Y, Z]
 
                             deltaX = endPos[0] - posTarget_x #Distance error X-axis [particle]
@@ -213,7 +206,6 @@ def main_control():
 
                                 target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
 
-                                #pub_tank_volume.publish(tankVolume) #Select tank volume.
                                 simTime_actual = simTime
                                 realTime_actual = realTime
 
@@ -265,7 +257,7 @@ def main_control():
 
                                 #If DRONE went out of control and lost the target. Restart.
                                 if target_rho > 2:
-                                    print('++++++++++++++++++++++++ Target too far... Restarting simulation')
+                                    print('In Route: ' + str(linea[0])+ ' In point: ' + str(coord_aux) + ' SimTime: ' + str(simTime_actual) + ' TargetRHO: ' + str(target_rho)+ ' DRONE out of control and lost the TARGET')
                                     restartTank = True
                                     pub_restart.publish(restartTank)
                                     time.sleep(2)
@@ -295,17 +287,10 @@ def main_control():
                                     tankMass = 0
                                     break
 
-
-                                
-                                #print('Target_RHO: ' + str(round(target_rho,3)) )
-                                #sys.stdout.write("\033[K") # Clear to the end of line
-                                #sys.stdout.write("\033[F") # Cursor up one line
-
                             delta_simTime = simTime_actual - simTime_anterior
                             delta_realTime = realTime_actual - realTime_anterior
             
             #Wait till drone reaches particle before starting new path...
-            
             while target_rho > 0.08:
                 target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
                 sim_anterior2 = 0

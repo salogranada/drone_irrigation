@@ -66,6 +66,8 @@ class variableMass(object):
     ###############################################################################################
     def callback_restart(self,dataRestart):
         self.restartTank = dataRestart.data
+        if self.restartTank == True:
+            self.cont = 0
 
     def callback_simulationTime(self,dataTime):
         self.simulationTime = dataTime.data
