@@ -117,7 +117,7 @@ def info_status():
 	rpm = 0
 	rpm_list = [0,0,0,0]
 	scriptDir = os.path.dirname(__file__)
-	flight_data = scriptDir +'/' + "flight_data.txt"
+	flight_data = scriptDir +'/../data_base/flight_data/flight_data_20faltantes.txt'
 	f = open(flight_data, "w")
 	f.write('route_num|missing_points|simTime|tankMass|force_array|torque_array|rpm_list|droneVel|error_target_vel|error_target_dist \n')
 

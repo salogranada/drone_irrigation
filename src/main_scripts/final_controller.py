@@ -20,10 +20,10 @@ ang_x, ang_y, ang_z = 0,0,0
 
 rho = 0
 
-#Time for each of the paths in the trayectory [s]
+#Time for each of the paths in the trayectory [s] TEST
 tiempo = [80, 40, 30, 20]
 
-#Path points inside of the trayectory [m]
+#Path points inside of the trayectory [m] TEST
 ruta = [[-4,0,1], [-3,0,1], [0,0,1], [2,0,1], [0,4,1]]
 
 simTime_anterior = 0
@@ -104,9 +104,9 @@ def main_control():
     rospy.Subscriber("/drone_orientation", Float32MultiArray, droneOrientation_callback, tcp_nodelay=True)
 
     #paths_file = input('Input paths file (no extention) >')
-    paths_file = 'path_v3'
+    paths_file = '/../data_base/random_paths/path_v3_20faltantes'
     scriptDir = os.path.dirname(__file__)
-    paths_file = scriptDir +'/' + paths_file + '.txt'
+    paths_file = scriptDir + paths_file + '.txt'
     file = open(paths_file)
 
     delta_realTime = 0
@@ -123,6 +123,10 @@ def main_control():
     tankVolume = String()
     
     tankVolume.data = 'B10L' #Volume of the water tank.
+
+    scriptDir = os.path.dirname(__file__)
+    error_report = scriptDir +'/../data_base/reports/error_report.txt'
+    error_file = open(error_report, "w")
 
     while not rospy.is_shutdown():
 
@@ -261,16 +265,31 @@ def main_control():
                                 pub_status.publish(drone_status)
                                 pub_time.publish(controller_time)
 
-                                #If drone went out of control and lost the target. Restart.
+                                #If DRONE went out of control and lost the target. Restart.
                                 if target_rho > 3:
                                     print('++++++++++++++++++++++++ Target too far... Restarting simulation')
+                                    error_file.write('In Route: ' + str(linea[0])+ ' In point: ' + str(coord_aux) + ' SimTime: ' + str(simTime_actual) + ' targetRHO: ' + str(target_rho)+ ' DRONE out of control and lost the target \n')
                                     restartTank = True
                                     pub_restart.publish(restartTank)
-                                    time.sleep(8)
+                                    time.sleep(2)
                                     restartTank = False
                                     pub_restart.publish(restartTank)
                                     sim_anterior2 = 0
                                     break
+
+                                #If TARGET went out of control and lost the WAYPOINT. Restart.
+                                if rho > 15:
+                                    print('In Route: ' + str(linea[0])+ ' In point: ' + str(coord_aux) + ' SimTime: ' + str(simTime_actual) + ' RHO: ' + str(rho)+ ' TARGET out of control and lost the WAYPOINT')
+                                    error_file.write('In Route: ' + str(linea[0])+ ' In point: ' + str(coord_aux) + ' SimTime: ' + str(simTime_actual) + ' RHO: ' + str(rho)+ ' TARGET out of control and lost the WAYPOINT \n')
+                                    restartTank = True
+                                    pub_restart.publish(restartTank)
+                                    time.sleep(2)
+                                    restartTank = False
+                                    pub_restart.publish(restartTank)
+                                    sim_anterior2 = 0
+                                    break
+
+
                                 
                                 #print('Target_RHO: ' + str(round(target_rho,3)) )
                                 #sys.stdout.write("\033[K") # Clear to the end of line
@@ -293,8 +312,8 @@ def main_control():
             restartTank = True
             pub_restart.publish(restartTank)
 
-            print('                           WAIT 10 SECONDS                  -')
-            time.sleep(10)
+            print('                           WAIT 5 SECONDS                  -')
+            time.sleep(5)
             
             line = file.readline() #Read next path
             print('**************************Read next line*********************')
@@ -304,6 +323,7 @@ def main_control():
         print('----------------------------Finished Trayectory--------------------------')
         sys.stdout.write("\033[K") # Clear to the end of line
         sys.stdout.write("\033[F") # Cursor up one line
+        error_file.close()
         rate.sleep()
 
 if __name__ == '__main__':
