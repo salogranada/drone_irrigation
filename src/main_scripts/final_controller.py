@@ -274,7 +274,9 @@ def main_control():
                                     time.sleep(3)
                                     sim_anterior2 = 0
                                     target_rho = 0
+                                    posTarget_x,posTarget_y,pos_x,pos_y = 0,0,0,0
                                     simTime_anterior = 0
+                                    tankMass = 0
                                     break
 
                                 #If TARGET went out of control and lost the WAYPOINT. Restart.
@@ -288,7 +290,9 @@ def main_control():
                                     time.sleep(3)
                                     sim_anterior2 = 0
                                     target_rho = 0
+                                    posTarget_x,posTarget_y,pos_x,pos_y = 0,0,0,0
                                     simTime_anterior = 0
+                                    tankMass = 0
                                     break
 
 
