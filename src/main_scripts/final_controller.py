@@ -164,8 +164,8 @@ def main_control():
                     if init == True:
                         tiempito = tiempo[contador]
                         
-                        coord_aux = coord.split(',')
-                        #print('coord_aux:   ', coord_aux)
+                        coord_aux = coord.split(',') #Splits into X,Y,Z coordinates
+
                         if coord_aux[0] != '':
                             coord_x = coord_aux[0]
                             coord_y = coord_aux[1]
@@ -225,17 +225,17 @@ def main_control():
                                 if simTime_actual - sim_anterior2 < 0:
                                     sim_anterior2 = 0
 
-                                print('sim_anterior2: ', round(sim_anterior2,4), round(simTime_actual - sim_anterior2,3))
-                                sys.stdout.write("\033[K") # Clear to the end of line
-                                sys.stdout.write("\033[F") # Cursor up one line
+                                #print('sim_anterior2: ', round(sim_anterior2,4), round(simTime_actual - sim_anterior2,3))
+                                #sys.stdout.write("\033[K") # Clear to the end of line
+                                #sys.stdout.write("\033[F") # Cursor up one line
 
                                 #Only when 1 second has passed in simulation, publish the new position.
                                 #Simulation con go faster than real time and still behave as supposed.
                                 if simTime_actual - sim_anterior2 >= 1:
 
-                                    print('Publishing correctly                      cuadrito')
-                                    sys.stdout.write("\033[K") # Clear to the end of line
-                                    sys.stdout.write("\033[F") # Cursor up one line
+                                    #print('Publishing correctly                      cuadrito')
+                                    #sys.stdout.write("\033[K") # Clear to the end of line
+                                    #sys.stdout.write("\033[F") # Cursor up one line
 
                                     droneVel = actualDronePose - lastDronePose
                                     lastDronePose = actualDronePose

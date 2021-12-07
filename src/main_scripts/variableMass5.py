@@ -68,6 +68,7 @@ class variableMass(object):
         self.restartTank = dataRestart.data
         if self.restartTank == True:
             self.cont = 0
+            self.simTimeIrrigation0 = 0
 
     def callback_simulationTime(self,dataTime):
         self.simulationTime = dataTime.data
@@ -77,6 +78,8 @@ class variableMass(object):
         self.irrigationFlag = dataFlag.data
         if self.restartTank == True:
             self.cont = 0
+            self.simTimeIrrigation0 = 0
+
         #Assuming the flow rate of the Agras MG-1, and the box dimensions of Agras T30 (WxL)
         if self.irrigationFlag == 'B10L': #Begins irrigation (Default 10L).
             #print("Entro a 10L")
