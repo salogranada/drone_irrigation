@@ -13,13 +13,13 @@ m3_sum_torque, m3_avg_torque = 0,0
 m4_sum_torque, m4_avg_torque = 0,0
 
 #Creates data frame for the flight data and the original random_paths file.
-flight_df = pd.read_csv('../data_base/flight_data/flight_data_viejito.txt', sep="|")
+flight_df = pd.read_csv('../data_base/flight_data/flight_data_2000.txt', sep="|")
 flight_df.columns = flight_df.columns.str.strip()
 
 #Remove simulation time data that is < 0, indicates mal functioning
 flight_df = flight_df.loc[flight_df['simTime'] > 0]
 
-path_df = pd.read_csv('../data_base/random_paths/path_v3_header_20faltantes.txt', sep="|")
+path_df = pd.read_csv('../data_base/random_paths/path_v4_header.txt', sep="|")
 
 #New data fram with energies
 energy_df = path_df
@@ -76,4 +76,5 @@ for i, row_path_specs in path_df.iterrows():
 
         energy_df.loc[energy_df.index[i], 'Energy'] = energy
 
-energy_df.to_csv('../data_base/paths_energy/paths_energy_20faltantes.csv',index=False)
+energy_df.to_csv('../data_base/paths_energy/paths_energy_2000_parte1.csv',index=False)
+print('Finished')
