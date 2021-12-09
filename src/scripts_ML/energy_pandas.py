@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 from os import path
+import time
 import numpy as np
 import pandas as pd
 
-#Reads the data file gotten from simulation. Calculates energy consumption of the drone.
+#Reads the data file gotten from simulation. Calculates energy consumption; path time, distance and avg__vel.
 #Author: Salomon Granada Ulloque
 #E-mail: s.granada@uniandes.edu.co
 
@@ -12,34 +13,71 @@ m2_sum_torque, m2_avg_torque = 0,0
 m3_sum_torque, m3_avg_torque = 0,0
 m4_sum_torque, m4_avg_torque = 0,0
 
-#Creates data frame for the flight data and the original random_paths file.
+#Creates data frame for the flight data
 flight_df = pd.read_csv('../data_base/flight_data/flight_data_2000.txt', sep="|")
 flight_df.columns = flight_df.columns.str.strip()
 
 #Remove simulation time data that is < 0, indicates mal functioning
 flight_df = flight_df.loc[flight_df['simTime'] > 0]
 
+#Creates data frame for the  random_paths file.
 path_df = pd.read_csv('../data_base/random_paths/path_v4_header.txt', sep="|")
 
-#New data fram with energies
+#New data frame with energies
 energy_df = path_df
 energy_df['Energy'] = 0
+dist_list = []
+total_times_list = []
+intPoints_list =[]
 
-#Go through each of the random generated paths
-for i, row_path_specs in path_df.iterrows():
+
+#Go through each of the random generated paths (path_df)
+for iter, row_path_specs in path_df.iterrows():
 
     #Restarts sums for each path
     m1_sum_rpm,m2_sum_rpm, m3_sum_rpm,m4_sum_rpm = 0,0,0,0
     m1_sum_torque,m2_sum_torque, m3_sum_torque,m4_sum_torque = 0,0,0,0
+    total_time_path = 0
+    coordX_old, coordY_old = 0, 0
+    sum_dist = 0
+
+    #Retrieves lists of points for each path
+    points_list = list(row_path_specs.loc['points'].split(';')) 
+
+    for i in points_list:
+        intPoints = list(map(int,i.split(','))) #convert time strings to int
+        intPoints_list.append(intPoints)
+    
+    for i in intPoints_list:
+        #Current coord in X and Y
+        coordX_new = i[0]
+        coordY_new = i[1]
+
+        current_point_dist = np.sqrt((coordX_new-coordX_old)**2 + (coordY_new-coordY_old)**2)
+        sum_dist = sum_dist + current_point_dist
+
+        #Update current X and Y coord
+        coordX_old = coordX_new
+        coordY_old = coordY_new
+    
+    #Saves total dist in the path
+    dist_list.append(sum_dist)
+
 
     #Retrieves lists of times for each path
     time_list = list(map(int,row_path_specs.loc['times'].split(','))) #convert time strings to int
 
-    #Selects current path data from the whole list of paths
-    current_path = flight_df.loc[flight_df['route_num'] == int(row_path_specs.loc['path_num'])]
+    #Adds all the times required to end current path
+    for i in time_list:
+        total_time_path = total_time_path + i
+    
+    total_times_list.append(total_time_path)
+
+    #Gets current path flight_data (DATA FRAME)
+    current_path_info = flight_df.loc[flight_df['route_num'] == int(row_path_specs.loc['path_num'])]
 
     #Iters through all data in one of the paths in flight_data.txt file
-    for index, row in current_path.iterrows():
+    for index, row in current_path_info.iterrows():
 
         m1_rpm, m2_rpm, m3_rpm, m4_rpm = row['rpm_list'].split(',')
         m1_torque, m2_torque, m3_torque, m4_torque = row['torque_array'].split(',')
@@ -55,26 +93,31 @@ for i, row_path_specs in path_df.iterrows():
         m4_torque = m4_torque.split(']')
         m4_torque = m4_torque[0].replace(']','')
 
-        print(row['route_num'])
-        #print("m1_rpm: ",m1_rpm)
-        #print("m1_torque: ",m1_torque)
+        m1_sum_rpm = m1_sum_rpm + float(float(m1_rpm))
+        m2_sum_rpm = m2_sum_rpm + float(float(m2_rpm))
+        m3_sum_rpm = m3_sum_rpm + float(float(m3_rpm))
+        m4_sum_rpm = m4_sum_rpm + float(float(m4_rpm))
 
-        m1_sum_rpm = m1_sum_rpm + int(float(m1_rpm))
-        m2_sum_rpm = m2_sum_rpm + int(float(m2_rpm))
-        m3_sum_rpm = m3_sum_rpm + int(float(m3_rpm))
-        m4_sum_rpm = m4_sum_rpm + int(float(m4_rpm))
-
-        m1_sum_torque = m1_sum_torque + int(float(m1_torque))
-        m2_sum_torque = m2_sum_torque + int(float(m2_torque))
-        m3_sum_torque = m3_sum_torque + int(float(m3_torque))
-        m4_sum_torque = m4_sum_torque + int(float(m4_torque))
+        m1_sum_torque = m1_sum_torque + abs(float(float(m1_torque)))
+        m2_sum_torque = m2_sum_torque + abs(float(float(m2_torque)))
+        m3_sum_torque = m3_sum_torque + abs(float(float(m3_torque)))
+        m4_sum_torque = m4_sum_torque + abs(float(float(m4_torque)))
 
         total_rpm = [m1_sum_rpm, m2_sum_rpm, m3_sum_rpm, m4_sum_rpm]
         total_torque = [m1_sum_torque, m2_sum_torque, m3_sum_torque, m4_sum_torque]
 
-        energy = np.abs(np.dot(np.array(total_rpm), np.array(total_torque)))
+        #print(total_rpm, '  torque: ',total_torque)
 
-        energy_df.loc[energy_df.index[i], 'Energy'] = energy
+        energy = np.abs(np.dot(np.array(total_rpm), np.array(total_torque)))
+        print('ENERGY: ',energy)
+        energy_df.loc[energy_df.index[iter], 'Energy'] = energy
+        
+avg_path_vel = np.array(dist_list)/np.array(total_times_list)
+
+energy_df['total_dist'] = dist_list
+energy_df['Total_time'] = total_times_list
+energy_df['avg_path_vel'] = avg_path_vel
+
+print(energy_df)
 
 energy_df.to_csv('../data_base/paths_energy/paths_energy_2000_parte1.csv',index=False)
-print('Finished')
