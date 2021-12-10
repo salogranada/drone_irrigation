@@ -119,12 +119,12 @@ def info_status():
 
 	#Opens file for savig data from flight
 	scriptDir = os.path.dirname(__file__)
-	flight_data = scriptDir +'/../data_base/flight_data/flight_data_2000.txt'
+	flight_data = scriptDir +'/../data_base/flight_data/flight_data_2000_parte2.txt'
 	f = open(flight_data, "w")
 	f.write('route_num|missing_points|simTime|tankMass|force_array|torque_array|rpm_list|droneVel|error_target_vel|error_target_dist \n')
 	
 	#opens file for error log.
-	error_report = scriptDir +'/../data_base/reports/error_report_2000paths.txt'
+	error_report = scriptDir +'/../data_base/reports/error_report_2000paths_parte2.txt'
 	error_file = open(error_report, "w")
 
 	while not rospy.is_shutdown():
@@ -169,7 +169,11 @@ def info_status():
 			print(terminal_msg)
 			error_target_vel = path_vel - droneVel
 			error_target_dist = target_rho
+
+			#Write in flight_data file.
 			f.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(force) + '|'+ str(torque)  +'|'+ str(rpm_list)+ '|' + str(droneVel) + '|' + str(error_target_vel) + '|' + str(error_target_dist) +'\n')
+			
+			#Write in error reports file.
 			if simTime < 0:
 				error_file.write('In Route: ' + str(route_num)+ ' In point: ' + str(missing_points) + ' SimTime: ' + str(round(simTime,4)) + ' TankMass: ' + str(round(tankMass,4))+  ' |Negative Simtime \n')
 			if rho > 15:

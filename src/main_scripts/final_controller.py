@@ -4,11 +4,10 @@ import sys
 import os
 import numpy as np
 from std_msgs.msg import Float32MultiArray, Float32, String, Bool
-import sim
 import time
 
 #Drone control guided by particle in simulation.
-#Set the list of points in the trajectory and time the drone must reach each point.
+#Set the list of points in the trajectory and time the drone must reach each point. The position controller will travel the path
 #Reads paths from file.
 #Coppeliasim Scene: tracking_control.ttt
 
@@ -103,7 +102,7 @@ def main_control():
     rospy.Subscriber("/drone_orientation", Float32MultiArray, droneOrientation_callback, tcp_nodelay=True)
 
     #paths_file = input('Input paths file (no extention) >')
-    paths_file = '/../data_base/random_paths/path_v4'
+    paths_file = '/../data_base/random_paths/path_v4_p2'
     scriptDir = os.path.dirname(__file__)
     paths_file = scriptDir + paths_file + '.txt'
     file = open(paths_file)
@@ -149,6 +148,7 @@ def main_control():
                 if contador < len(tiempo): #Go through each of the times in the list.
                     print('Waiting for variableMass...')
 
+                    #Wait till tankmass is calculated
                     while tankMass == 0 or restartTank == True:
                         init = False 
                         restartTank = False
@@ -202,7 +202,7 @@ def main_control():
                             #While we reach the point (with certain error), keep moving.
                             while rho > 0.1:
 
-                                actualDronePose = pos_x
+                                actualDronePose = pos_x #For calculating drone velocity
 
                                 target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
 
@@ -217,8 +217,8 @@ def main_control():
 
                                 rho = np.sqrt(deltaX**2 + deltaY**2)
 
-                                paso_x = v_x #+ vel_adjust_x
-                                paso_y = v_y #+ vel_adjust_y
+                                paso_x = v_x #How much the target should move every second (step) to satisfy desired time
+                                paso_y = v_y
 
                                 missing_points = len(ruta)-contador #How many points missing till finishing path
 
@@ -230,12 +230,12 @@ def main_control():
                                 #sys.stdout.write("\033[F") # Cursor up one line
 
                                 #Only when 1 second has passed in simulation, publish the new position.
-                                #Simulation con go faster than real time and still behave as supposed.
+                                #Simulation can go faster than real time and still behave as supposed.
                                 if simTime_actual - sim_anterior2 >= 1:
 
-                                    #print('Publishing correctly                      cuadrito')
-                                    #sys.stdout.write("\033[K") # Clear to the end of line
-                                    #sys.stdout.write("\033[F") # Cursor up one line
+                                    print('Publishing correctly                      ' + str(simTime))
+                                    sys.stdout.write("\033[K") # Clear to the end of line
+                                    sys.stdout.write("\033[F") # Cursor up one line
 
                                     droneVel = actualDronePose - lastDronePose
                                     lastDronePose = actualDronePose
@@ -248,9 +248,9 @@ def main_control():
                                     pub_tank_volume.publish(tankVolume)
 
                                     sim_anterior2 = simTime_actual
-                                    
-                                controller_time.data = [delta_realTime, delta_simTime]
 
+                                #Publish data 
+                                controller_time.data = [delta_realTime, delta_simTime]
                                 drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2], path_vel, float(linea[0]), missing_points, droneVel,target_rho] #Estructure : [rho, pathTime, EndPos, path_vel, route No., missing_points, dronevel,target_rho]
                                 pub_status.publish(drone_status)
                                 pub_time.publish(controller_time)
@@ -263,6 +263,7 @@ def main_control():
                                     time.sleep(2)
                                     restartTank = False
                                     pub_restart.publish(restartTank)
+                                    pub_tank_volume.publish(tankVolume)
                                     time.sleep(3)
                                     sim_anterior2 = 0
                                     target_rho = 0
@@ -279,6 +280,7 @@ def main_control():
                                     time.sleep(2)
                                     restartTank = False
                                     pub_restart.publish(restartTank)
+                                    pub_tank_volume.publish(tankVolume)
                                     time.sleep(3)
                                     sim_anterior2 = 0
                                     target_rho = 0
