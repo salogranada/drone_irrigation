@@ -28,7 +28,6 @@ energy_df = path_df
 energy_df['Energy'] = 0
 dist_list = []
 total_times_list = []
-intPoints_list =[]
 
 
 #Go through each of the random generated paths (path_df)
@@ -40,6 +39,8 @@ for iter, row_path_specs in path_df.iterrows():
     total_time_path = 0
     coordX_old, coordY_old = 0, 0
     sum_dist = 0
+    intPoints_list =[]
+
 
     #Retrieves lists of points for each path
     points_list = list(row_path_specs.loc['points'].split(';')) 
@@ -109,13 +110,13 @@ for iter, row_path_specs in path_df.iterrows():
         #print(total_rpm, '  torque: ',total_torque)
 
         energy = np.abs(np.dot(np.array(total_rpm), np.array(total_torque)))
-        print('ENERGY: ',energy)
+        #print('ENERGY: ',energy)
         energy_df.loc[energy_df.index[iter], 'Energy'] = energy
         
 avg_path_vel = np.array(dist_list)/np.array(total_times_list)
 
 energy_df['total_dist'] = dist_list
-energy_df['Total_time'] = total_times_list
+energy_df['total_time'] = total_times_list
 energy_df['avg_path_vel'] = avg_path_vel
 
 print(energy_df)
