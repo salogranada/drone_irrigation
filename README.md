@@ -2,23 +2,28 @@
 
 #### Building
 
-1. Clone the repository (recommended location is ~).
+1. Clone the repository (recommended location is ~) downloaded file is a ROS package.
 
   ```bash
   cd ~
   ```
 
   ```bash
-  git clone https://github.com/salogranada/drone_irrigation_vrep.git
+  git clone https://github.com/salogranada/drone_irrigation.git
   ```
 
-2. Move to the root of the workspace.
+2. Move repository to the source of the workspace. (for this example tesis_ws)
 
   ```bash
-  cd ~/tesis_ws
+  cd ~/tesis_ws/src/
+  ```
+3. Move to the root of the workspace.
+
+  ```bash
+  cd ~/tesis_ws/
   ```
 
-3. Build the workspace
+4. Build the workspace
 
   ```bash
   catkin build
