@@ -13,6 +13,11 @@ import os
 #Calculates each motors RPM for ML trainning.
 #Saves data to file.
 
+#****************************************
+#FOR ANY NEW PATH SIMULATION YOU HAVE TO SPECIFY 2 FILES! flight data and error report.
+#****************************************
+
+
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
 
@@ -126,12 +131,12 @@ def info_status():
 
 	#Opens file for savig data from flight
 	scriptDir = os.path.dirname(__file__)
-	flight_data = scriptDir +'/../data_base/flight_data/flight_data_2000_parte2.txt'
+	flight_data = scriptDir +'/../data_base/flight_data/flight_data_2000_parte3.txt'
 	f = open(flight_data, "w")
 	f.write('route_num|missing_points|simTime|tankMass|force_array|torque_array|rpm_list|droneVel|error_target_vel|error_target_dist|xDisplacement|yDisplacement|x_avg_Vel|y_avg_Vel \n')
 	
 	#opens file for error log.
-	error_report = scriptDir +'/../data_base/reports/error_report_2000paths_parte2.txt'
+	error_report = scriptDir +'/../data_base/reports/error_report_2000paths_parte3.txt'
 	error_file = open(error_report, "w")
 
 	initial_points = missing_points

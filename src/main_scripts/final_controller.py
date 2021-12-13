@@ -11,6 +11,11 @@ import time
 #Reads paths from file.
 #Coppeliasim Scene: tracking_control.ttt
 
+#****************************************
+#FOR ANY SIMULATION YOU HAVE TO SPECIFY PATH FILE! Line 110 of this code.
+#****************************************
+
+
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
 
@@ -102,7 +107,7 @@ def main_control():
     rospy.Subscriber("/drone_orientation", Float32MultiArray, droneOrientation_callback, tcp_nodelay=True)
 
     #paths_file = input('Input paths file (no extention) >')
-    paths_file = '/../data_base/random_paths/path_v4_p2'
+    paths_file = '/../data_base/random_paths/path_v4_p3'
     scriptDir = os.path.dirname(__file__)
     paths_file = scriptDir + paths_file + '.txt'
     file = open(paths_file)
