@@ -1,4 +1,4 @@
-# drone_irrigation_vrep
+# drone_irrigation
 
 #### Building
 
