@@ -14,7 +14,7 @@ import os
 #Saves data to file.
 
 #****************************************
-#FOR ANY NEW PATH SIMULATION YOU HAVE TO SPECIFY 2 FILES! flight data and error report.
+#FOR ANY NEW PATH SIMULATION YOU HAVE TO SPECIFY SAVING 2 FILES! flight data and error report.
 #****************************************
 
 
