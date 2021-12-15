@@ -8,6 +8,10 @@ import pandas as pd
 #Author: Salomon Granada Ulloque
 #E-mail: s.granada@uniandes.edu.co
 
+#****************************************
+#FOR ANY NEW DATA YOU HAVE TO SPECIFY 3 FILES! flight_df (flight data), path_df (random path data), energy_df (where you save the output)
+#****************************************
+
 m1_sum_torque, m1_avg_torque = 0,0
 m2_sum_torque, m2_avg_torque = 0,0
 m3_sum_torque, m3_avg_torque = 0,0
@@ -77,6 +81,12 @@ for iter, row_path_specs in path_df.iterrows():
     #Gets current path flight_data (DATA FRAME)
     current_path_info = flight_df.loc[flight_df['route_num'] == int(row_path_specs.loc['path_num'])]
 
+    #print(current_path_info['simTime'].cumsum())
+
+    drone_real_time = current_path_info['simTime'].iloc[-1]
+
+    print('final time is: ', drone_real_time)
+
     #Iters through all data in one of the paths in flight_data.txt file
     for index, row in current_path_info.iterrows():
 
@@ -121,4 +131,4 @@ energy_df['avg_path_vel'] = avg_path_vel
 
 print(energy_df)
 
-energy_df.to_csv('../data_base/paths_energy/paths_energy_2000_parte2_salo.csv',index=False)
+#energy_df.to_csv('../data_base/paths_energy/paths_energy_2000_parte2_salo.csv',index=False)
