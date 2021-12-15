@@ -31,8 +31,10 @@ path_df = pd.read_csv('../data_base/random_paths/path_v4_header_p2_salo.txt', se
 error_df = pd.read_csv('../data_base/reports/error_report_2000paths_parte2.txt', sep="|")
 
 #Creates new data frame for saving energies
-#data = {'path_num': [], 'point_num': [], 'time': [], 'Energy': []} 
 energy_df = pd.DataFrame()  
+
+#Creates new data frame for faving total values.
+totals_df = pd.DataFrame()
 
 dist_list = []
 total_times_list = []
@@ -142,5 +144,14 @@ for idex_path, row_path_specs in path_df.iterrows():
     total_times_list.append(total_time_path)
     avg_path_vel = np.array(dist_list)/np.array(total_times_list)
 
+    data_df = pd.DataFrame([[current_path]], columns=['path_num'])
+    totals_df = totals_df.append(data_df, ignore_index=True)
+
+totals_df['teo_path_dist'] = dist_list
+totals_df['teo_path_time'] = total_times_list
+totals_df['avg_path_vel'] = avg_path_vel
+
+
 print(energy_df)
-energy_df.to_csv('../data_base/paths_energy/penergy_2000_p2_salo.csv',index=False)
+print(totals_df)
+#energy_df.to_csv('../data_base/paths_energy/penergy_2000_p2_salo.csv',index=False)
