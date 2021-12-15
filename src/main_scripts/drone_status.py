@@ -131,13 +131,14 @@ def info_status():
 
 	#Opens file for savig data from flight
 	scriptDir = os.path.dirname(__file__)
-	flight_data = scriptDir +'/../data_base/flight_data/flight_data_2000_parte3.txt'
+	flight_data = scriptDir +'/../data_base/flight_data/flight_data_2000_p4.txt'
 	f = open(flight_data, "w")
 	f.write('route_num|missing_points|simTime|tankMass|force_array|torque_array|rpm_list|droneVel|error_target_vel|error_target_dist|xDisplacement|yDisplacement|x_avg_Vel|y_avg_Vel \n')
 	
 	#opens file for error log.
-	error_report = scriptDir +'/../data_base/reports/error_report_2000paths_parte3.txt'
+	error_report = scriptDir +'/../data_base/reports/error_report_2000paths_p4.txt'
 	error_file = open(error_report, "w")
+	error_file.write('route_num|point|simTime|tankMass|RHO|target_rho|log \n')
 
 	initial_points = missing_points
 
@@ -211,11 +212,15 @@ def info_status():
 			
 			#Write in error reports file.
 			if simTime < 0:
-				error_file.write('In Route: ' + str(route_num)+ ' In point: ' + str(missing_points) + ' SimTime: ' + str(round(simTime,4)) + ' TankMass: ' + str(round(tankMass,4))+  ' |Negative Simtime \n')
+				#error_file.write('In Route: ' + str(route_num)+ ' In point: ' + str(missing_points) + ' SimTime: ' + str(round(simTime,4)) + ' TankMass: ' + str(round(tankMass,4))+  ' |Negative Simtime \n')
+				error_file.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(rho) + '|'+ str(target_rho) + '|Negative Simtime \n')
+
 			if rho > 15:
-				error_file.write('In Route: ' + str(route_num)+ ' In point: ' + str(missing_points) + ' SimTime: ' + str(round(simTime,4)) + ' RHO: ' + str(round(rho,4)) + ' |TARGET out of control and lost the WAYPOINT \n')
+				#error_file.write('In Route: ' + str(route_num)+ ' In point: ' + str(missing_points) + ' SimTime: ' + str(round(simTime,4)) + ' RHO: ' + str(round(rho,4)) + ' |TARGET out of control and lost the WAYPOINT \n')
+				error_file.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(rho) + '|'+ str(target_rho) + '|TARGET out of control and lost the WAYPOINT \n')
+
 			elif target_rho > 2:
-				error_file.write('In Route: ' + str(route_num)+ ' In point: ' + str(missing_points) + ' SimTime: ' + str(round(simTime,4)) + ' TargetRHO: ' + str(round(target_rho,4)) + ' |DRONE out of control and lost the target \n')
+				error_file.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(rho) + '|'+ str(target_rho) + '|DRONE out of control and lost the TARGET \n')
 
 		time.sleep(1)
 	f.close()
