@@ -16,8 +16,8 @@ import os
 #****************************************
 #FOR ANY NEW PATH SIMULATION YOU HAVE TO SPECIFY SAVING 2 FILES! flight data and error report.
 #****************************************
-flighData_filename = '/../data_base/flight_data/fd_pathv5_salo.txt'
-errorLog_filename = '/../data_base/reports/errorlog_pathv5_salo.txt'
+flighData_filename = '/../data_base/flight_data/fd_pathv5_salo.txt' #Output
+errorLog_filename = '/../data_base/reports/errorlog_pathv5_salo.txt' #Output
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co

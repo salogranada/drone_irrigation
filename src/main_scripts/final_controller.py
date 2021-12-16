@@ -14,7 +14,7 @@ import time
 #****************************************
 #FOR ANY SIMULATION YOU HAVE TO SPECIFY THE PATH FILE!
 #****************************************
-paths_file = '/../data_base/random_paths/path_v5_salo'
+paths_file = '/../data_base/random_paths/path_v5_salo' #Input
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co

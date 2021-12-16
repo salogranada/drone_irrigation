@@ -9,9 +9,11 @@ import pandas as pd
 #*********************************************
 #FOR ANY NEW DATA YOU HAVE TO SPECIFY 5 FILES! 
 #*********************************************
+#INPUT
 flight_data_filename = '../data_base/flight_data/fd_pathv5_salo.txt'
 path_data_filename = '../data_base/random_paths/path_v5_salo.txt'
 errorLog_filename = '../data_base/reports/errorlog_pathv5_salo.txt'
+#OUTPUT
 energy_df_filename = '../data_base/paths_energy/features_pathv5_salo.csv' #energy_df (where you save the energy and features output)
 totals_df_filename = '../data_base/paths_totals/totals_pathv5_salo.csv' #totals_df (where you save total (cummulative) output)
 #*********************************************
