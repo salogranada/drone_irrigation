@@ -12,11 +12,6 @@ import pandas as pd
 
 print('Starting energy calculation... wait till its done.')
 
-m1_sum_torque, m1_avg_torque = 0,0
-m2_sum_torque, m2_avg_torque = 0,0
-m3_sum_torque, m3_avg_torque = 0,0
-m4_sum_torque, m4_avg_torque = 0,0
-
 #Opens data frame for the flight data
 flight_df = pd.read_csv('../data_base/flight_data/prueba_paths.txt', sep="|")
 flight_df.columns = flight_df.columns.str.strip()
@@ -37,7 +32,15 @@ energy_df = pd.DataFrame()
 totals_df = pd.DataFrame()
 
 dist_list = []
+distX_list = []
+distY_list = []
+
 total_times_list = []
+
+m1_sum_torque, m1_avg_torque = 0,0
+m2_sum_torque, m2_avg_torque = 0,0
+m3_sum_torque, m3_avg_torque = 0,0
+m4_sum_torque, m4_avg_torque = 0,0
 
 #Go through each of the random generated paths (path_df)
 for idex_path, row_path_specs in path_df.iterrows():
@@ -80,8 +83,12 @@ for idex_path, row_path_specs in path_df.iterrows():
         coordY_new = intPoints_list[current_point][1]
         #Computes distance from one point to another.
         current_point_dist = np.sqrt((coordX_new-coordX_old)**2 + (coordY_new-coordY_old)**2)
+        current_point_Xdist = coordX_new-coordX_old
+        current_point_Ydist = coordY_new-coordY_old
 
         sum_dist = sum_dist + current_point_dist
+        sum_distX = sum_distX + current_point_Xdist
+        sum_distY = sum_distY + current_point_Ydist
         #Update current X and Y coord
         coordX_old = coordX_new
         coordY_old = coordY_new
@@ -137,23 +144,32 @@ for idex_path, row_path_specs in path_df.iterrows():
 
                 #print(total_rpm, total_torque, energy)
 
-                new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,teorical_vel,energy]], columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','teo_point_vel','Energy'])
-                energy_df = energy_df.append(new_df, ignore_index=True)
-                #print(energy_df)
+                #Only save those that really used energy.
+                if energy != 0:
+                    new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,current_point_Xdist, current_point_Ydist, teorical_vel,energy]], columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','teo_Xdist','teo_Ydist', 'teo_point_vel','Energy'])
+                    energy_df = energy_df.append(new_df, ignore_index=True)
+                    #print(energy_df)
 
-    #Saves total dist in the path
+    #Saves total dist in the path, total and for each axis.
     dist_list.append(sum_dist)
+    distX_list.append(sum_distX)
+    distY_list.append(sum_distY)
     total_times_list.append(total_time_path)
     avg_path_vel = np.array(dist_list)/np.array(total_times_list)
 
     data_df = pd.DataFrame([[current_path]], columns=['path_num'])
     totals_df = totals_df.append(data_df, ignore_index=True)
 
+#Add totals lists to the totals data frame.
 totals_df['teo_path_dist'] = dist_list
+totals_df['teo_path_Xdist'] = distX_list
+totals_df['teo_path_Ydist'] = distY_list
 totals_df['teo_path_time'] = total_times_list
 totals_df['avg_path_vel'] = avg_path_vel
 
-
 print(energy_df)
 print(totals_df)
+
+#Save to CSV file
 energy_df.to_csv('../data_base/paths_energy/prueba_paths.csv',index=False)
+totals_df.to_csv('../data_base/paths_totals/prueba_paths_totals.csv',index=False)

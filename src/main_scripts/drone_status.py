@@ -133,7 +133,7 @@ def info_status():
 	scriptDir = os.path.dirname(__file__)
 	flight_data = scriptDir +'/../data_base/flight_data/prueba_paths.txt'
 	f = open(flight_data, "w")
-	f.write('route_num|missing_points|simTime|tankMass|force_array|torque_array|rpm_list|droneVel|error_target_vel|error_target_dist|xDisplacement|yDisplacement|x_avg_Vel|y_avg_Vel \n')
+	f.write('route_num|missing_points|simTime|tankMass|force_array|torque_array|rpm_list|droneVel|error_target_vel|error_target_dist|xDisplacement|yDisplacement|x_avg_Vel|y_avg_Vel|pos_x|pos_y|pos_z \n')
 	
 	#opens file for error log.
 	error_report = scriptDir +'/../data_base/reports/prueba_paths.txt'
@@ -208,7 +208,7 @@ def info_status():
 			error_target_dist = target_rho
 
 			#Write in flight_data file.
-			f.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(force) + '|'+ str(torque)  +'|'+ str(rpm_list)+ '|' + str(droneVel) + '|' + str(error_target_vel) + '|' + str(error_target_dist)+ '|' + str(saveDistX)+ '|' + str(saveDistY)+ '|' + str(xVel)+ '|' + str(yVel) +'\n')
+			f.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(force) + '|'+ str(torque)  +'|'+ str(rpm_list)+ '|' + str(droneVel) + '|' + str(error_target_vel) + '|' + str(error_target_dist)+ '|' + str(saveDistX)+ '|' + str(saveDistY)+ '|' + str(xVel)+ '|' + str(yVel)+ '|' + str(pos_x)+ '|' + str(pos_y)+ '|' + str(pos_z) +'\n')
 			
 			#Write in error reports file.
 			if simTime < 0:
