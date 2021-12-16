@@ -1,4 +1,4 @@
-t1|t2|route|t3|t4|point|t5|simtime|feature_text|feature_num|log
+t1|t2|route_num|t3|t4|point|t5|simtime|feature_text|feature_num|log
 In|Route:|332.0|In|point:|6.0|SimTime:|0.0|TargetRHO:|5.3497|DRONE out of control and lost the target
 In|Route:|332.0|In|point:|6.0|SimTime:|0.0|TargetRHO:|5.3497|DRONE out of control and lost the target
 In|Route:|332.0|In|point:|6.0|SimTime:|0.0|TargetRHO:|5.3497|DRONE out of control and lost the target

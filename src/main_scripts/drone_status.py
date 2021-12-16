@@ -131,12 +131,12 @@ def info_status():
 
 	#Opens file for savig data from flight
 	scriptDir = os.path.dirname(__file__)
-	flight_data = scriptDir +'/../data_base/flight_data/flight_data_2000_p4.txt'
+	flight_data = scriptDir +'/../data_base/flight_data/prueba_paths.txt'
 	f = open(flight_data, "w")
 	f.write('route_num|missing_points|simTime|tankMass|force_array|torque_array|rpm_list|droneVel|error_target_vel|error_target_dist|xDisplacement|yDisplacement|x_avg_Vel|y_avg_Vel \n')
 	
 	#opens file for error log.
-	error_report = scriptDir +'/../data_base/reports/error_report_2000paths_p4.txt'
+	error_report = scriptDir +'/../data_base/reports/prueba_paths.txt'
 	error_file = open(error_report, "w")
 	error_file.write('route_num|point|simTime|tankMass|RHO|target_rho|log \n')
 
@@ -191,9 +191,9 @@ def info_status():
 		terminal_msg = terminal_msg + 'Rho: ' + str(round(rho,3)) + '   target_rho: ' + str(round(target_rho,3)) +'  Route num: '+ str(route_num) + '  Missing_points: '+ str(missing_points)  +'\n \n'
 		terminal_msg = terminal_msg + 'Drone_Vel: ' + str(round(droneVel,3)) + '   Axis Vel: '+ str(round(xVel,3)) +' - ' + str(round(yVel,3))+ '   Displacement: '+ str(round(saveDistX,3)) +' - ' + str(round(saveDistY,3)) + '\n \n'
 
-		#terminal_msg = terminal_msg + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
-		#terminal_msg = terminal_msg + 'Motor Torque: ' + str(torque) + '\n \n'
-		#terminal_msg = terminal_msg + 'Motor RPM: ' + str(rpm_list) +'\n \n'
+		terminal_msg = terminal_msg + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
+		terminal_msg = terminal_msg + 'Motor Torque: ' + str(torque) + '\n \n'
+		terminal_msg = terminal_msg + 'Motor RPM: ' + str(rpm_list) +'\n \n'
 		terminal_msg = terminal_msg + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume + ' Tank Restart: ' + str(restartTank) +'\n \n'
 
 		terminal_msg = terminal_msg + 'RealTime: ' + str(round(realTime,4)) +' simTime: ' + str(round(simTime,4)) + ' PathTime: ' + str(round(pathTime,3))

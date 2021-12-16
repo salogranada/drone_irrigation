@@ -39,8 +39,6 @@ realTime = 0
 tankMass = 0
 init = False
 
-print('Program started')
-
 #Particle (target) position
 def targetPose_callback(msg):
     global posTarget_x, posTarget_y, posTarget_z
@@ -107,7 +105,7 @@ def main_control():
     rospy.Subscriber("/drone_orientation", Float32MultiArray, droneOrientation_callback, tcp_nodelay=True)
 
     #paths_file = input('Input paths file (no extention) >')
-    paths_file = '/../data_base/random_paths/path_v4_p4_salo'
+    paths_file = '/../data_base/random_paths/prueba_paths'
     scriptDir = os.path.dirname(__file__)
     paths_file = scriptDir + paths_file + '.txt'
     file = open(paths_file)

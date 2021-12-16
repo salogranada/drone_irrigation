@@ -18,17 +18,17 @@ m3_sum_torque, m3_avg_torque = 0,0
 m4_sum_torque, m4_avg_torque = 0,0
 
 #Opens data frame for the flight data
-flight_df = pd.read_csv('../data_base/flight_data/flight_data_2000_parte2.txt', sep="|")
+flight_df = pd.read_csv('../data_base/flight_data/prueba_paths.txt', sep="|")
 flight_df.columns = flight_df.columns.str.strip()
 
 #Removes simulation time data that is < 0, indicates mal functioning
 flight_df = flight_df.loc[flight_df['simTime'] > 0]
 
 #Opens data frame for the  random_paths file.
-path_df = pd.read_csv('../data_base/random_paths/path_v4_header_p2_salo.txt', sep="|")
+path_df = pd.read_csv('../data_base/random_paths/prueba_paths_header.txt', sep="|")
 
 #Opens data frame for error file.
-error_df = pd.read_csv('../data_base/reports/error_report_2000paths_parte2.txt', sep="|")
+error_df = pd.read_csv('../data_base/reports/prueba_paths.txt', sep="|")
 
 #Creates new data frame for saving energies
 energy_df = pd.DataFrame()  
@@ -58,8 +58,8 @@ for idex_path, row_path_specs in path_df.iterrows():
         intPoints = list(map(int,i.split(','))) #convert time strings to int
         intPoints_list.append(intPoints)
 
-    #Goes through each of the points in each of the paths
-    for current_point in range(len(intPoints_list)):
+    #Goes through each of the points in each of the paths (path_df)
+    for current_point in range(len(intPoints_list)-1,-1,-1):
 
         #Restarts sums for each path
         m1_sum_rpm,m2_sum_rpm, m3_sum_rpm,m4_sum_rpm = 0,0,0,0
@@ -70,9 +70,8 @@ for idex_path, row_path_specs in path_df.iterrows():
         #Total TIME in path calculation
         #------------------------------
         #Adds all the times required to end current path
-        current_time = time_list[current_point]
+        current_time = time_list[len(time_list)-1-current_point]
         total_time_path = total_time_path + current_time
-
         #--------------------------
         #Total distance in path calculation
         #--------------------------
@@ -81,22 +80,23 @@ for idex_path, row_path_specs in path_df.iterrows():
         coordY_new = intPoints_list[current_point][1]
         #Computes distance from one point to another.
         current_point_dist = np.sqrt((coordX_new-coordX_old)**2 + (coordY_new-coordY_old)**2)
+
         sum_dist = sum_dist + current_point_dist
         #Update current X and Y coord
         coordX_old = coordX_new
         coordY_old = coordY_new
 
+
         #-----------------------------------------------------------------
         #Create data frame with flight data from the current point in path
         #-----------------------------------------------------------------
         current_pathPoint_info = flight_df.loc[(flight_df['route_num'] == current_path) & (flight_df['missing_points'] == current_point)]
-        #print(current_pathPoint_info)
 
         #Some points of paths doesnt have flight data, dont try to do operations if no data.
         if not current_pathPoint_info.empty:
             
             #Help us check if current point is in error file. If it is, dont calculate energy.
-            error_point = error_df.loc[( error_df['route'] == current_path )&(error_df['point'] == current_point )]
+            error_point = error_df.loc[( error_df['route_num'] == current_path )&(error_df['point'] == current_point )]
             if error_point.empty:
 
                 #Iters through all data in one of the points in flight_data.txt file
@@ -135,7 +135,9 @@ for idex_path, row_path_specs in path_df.iterrows():
                 energy = np.abs(np.dot(np.array(total_rpm), np.array(total_torque)))
                 teorical_vel = current_point_dist/current_time
 
-                new_df = pd.DataFrame([[current_path, current_point, intPoints_list[current_point],current_time,sim_drone_time,current_point_dist,teorical_vel,energy]], columns=['path_num', 'point_num', 'point_coords','teo_point_time', 'sim_drone_time', 'teo_point_dist','teo_point_vel','Energy'])
+                #print(total_rpm, total_torque, energy)
+
+                new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,teorical_vel,energy]], columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','teo_point_vel','Energy'])
                 energy_df = energy_df.append(new_df, ignore_index=True)
                 #print(energy_df)
 
@@ -154,4 +156,4 @@ totals_df['avg_path_vel'] = avg_path_vel
 
 print(energy_df)
 print(totals_df)
-#energy_df.to_csv('../data_base/paths_energy/penergy_2000_p2_salo.csv',index=False)
+energy_df.to_csv('../data_base/paths_energy/prueba_paths.csv',index=False)
