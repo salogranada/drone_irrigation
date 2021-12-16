@@ -12,9 +12,9 @@ import time
 #Coppeliasim Scene: tracking_control.ttt
 
 #****************************************
-#FOR ANY SIMULATION YOU HAVE TO SPECIFY THE PATH FILE! Line 110 of this code.
+#FOR ANY SIMULATION YOU HAVE TO SPECIFY THE PATH FILE!
 #****************************************
-
+paths_file = '/../data_base/random_paths/path_v5_salo'
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
@@ -81,7 +81,7 @@ def tankMass_callback(msg):
 #Main function for drone movement.
 def main_control():
     global pos_x, pos_y, pos_z, theta, deltaX, deltaY, tiempo, ruta, ang_x, ang_y, ang_z, posTarget_x,posTarget_y,posTarget_z
-    global simTime_actual, realTime_actual, simTime_anterior, realTime_anterior, realTime, simTime, tankMass, init
+    global simTime_actual, realTime_actual, simTime_anterior, realTime_anterior, realTime, simTime, tankMass, init, paths_file
 
     print('Starting control node...')
     print(' ')
@@ -105,7 +105,6 @@ def main_control():
     rospy.Subscriber("/drone_orientation", Float32MultiArray, droneOrientation_callback, tcp_nodelay=True)
 
     #paths_file = input('Input paths file (no extention) >')
-    paths_file = '/../data_base/random_paths/prueba_paths'
     scriptDir = os.path.dirname(__file__)
     paths_file = scriptDir + paths_file + '.txt'
     file = open(paths_file)

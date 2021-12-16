@@ -6,24 +6,29 @@ import pandas as pd
 #Author: Salomon Granada Ulloque
 #E-mail: s.granada@uniandes.edu.co
 
-#****************************************
-#FOR ANY NEW DATA YOU HAVE TO SPECIFY 3 FILES! flight_df (flight data), path_df (random path data), energy_df (where you save the output)
-#****************************************
+#*********************************************
+#FOR ANY NEW DATA YOU HAVE TO SPECIFY 5 FILES! 
+#*********************************************
+flight_data_filename = '../data_base/flight_data/fd_pathv5_salo.txt'
+path_data_filename = '../data_base/random_paths/path_v5_salo.txt'
+errorLog_filename = '../data_base/reports/errorlog_pathv5_salo.txt'
+energy_df_filename = '../data_base/paths_energy/features_pathv5_salo.csv' #energy_df (where you save the energy and features output)
+totals_df_filename = '../data_base/paths_totals/totals_pathv5_salo.csv' #totals_df (where you save total (cummulative) output)
+#*********************************************
 
 print('Starting energy calculation... wait till its done.')
 
 #Opens data frame for the flight data
-flight_df = pd.read_csv('../data_base/flight_data/prueba_paths.txt', sep="|")
+flight_df = pd.read_csv(flight_data_filename, sep="|")
 flight_df.columns = flight_df.columns.str.strip()
-
 #Removes simulation time data that is < 0, indicates mal functioning
 flight_df = flight_df.loc[flight_df['simTime'] > 0]
 
 #Opens data frame for the  random_paths file.
-path_df = pd.read_csv('../data_base/random_paths/prueba_paths_header.txt', sep="|")
+path_df = pd.read_csv(path_data_filename, sep="|")
 
 #Opens data frame for error file.
-error_df = pd.read_csv('../data_base/reports/prueba_paths.txt', sep="|")
+error_df = pd.read_csv(errorLog_filename, sep="|")
 
 #Creates new data frame for saving energies
 energy_df = pd.DataFrame()  
@@ -171,5 +176,5 @@ print(energy_df)
 print(totals_df)
 
 #Save to CSV file
-energy_df.to_csv('../data_base/paths_energy/prueba_paths.csv',index=False)
-totals_df.to_csv('../data_base/paths_totals/prueba_paths_totals.csv',index=False)
+energy_df.to_csv(energy_df_filename,index=False)
+totals_df.to_csv(totals_df_filename,index=False)
