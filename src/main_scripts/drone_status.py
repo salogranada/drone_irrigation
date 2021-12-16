@@ -191,9 +191,9 @@ def info_status():
 		terminal_msg = terminal_msg + 'Rho: ' + str(round(rho,3)) + '   target_rho: ' + str(round(target_rho,3)) +'  Route num: '+ str(route_num) + '  Missing_points: '+ str(missing_points)  +'\n \n'
 		terminal_msg = terminal_msg + 'Drone_Vel: ' + str(round(droneVel,3)) + '   Axis Vel: '+ str(round(xVel,3)) +' - ' + str(round(yVel,3))+ '   Displacement: '+ str(round(saveDistX,3)) +' - ' + str(round(saveDistY,3)) + '\n \n'
 
-		#terminal_msg = terminal_msg + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
-		#terminal_msg = terminal_msg + 'Motor Torque: ' + str(torque) + '\n \n'
-		#terminal_msg = terminal_msg + 'Motor RPM: ' + str(rpm_list) +'\n \n'
+		terminal_msg = terminal_msg + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
+		terminal_msg = terminal_msg + 'Motor Torque: ' + str(torque) + '\n \n'
+		terminal_msg = terminal_msg + 'Motor RPM: ' + str(rpm_list) +'\n \n'
 		terminal_msg = terminal_msg + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume + ' Tank Restart: ' + str(restartTank) +'\n \n'
 
 		terminal_msg = terminal_msg + 'RealTime: ' + str(round(realTime,4)) +' simTime: ' + str(round(simTime,4)) + ' PathTime: ' + str(round(pathTime,3))
