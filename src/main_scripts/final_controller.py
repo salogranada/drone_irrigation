@@ -14,7 +14,7 @@ import time
 #****************************************
 #FOR ANY SIMULATION YOU HAVE TO SPECIFY THE PATH FILE!
 #****************************************
-paths_file = '/../data_base/random_paths/path_v5_salo' #Input
+paths_file = '/../data_base/random_paths/path_v5_salo' #Input FILE NEEDS TO HAVE HEADER
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
@@ -108,6 +108,7 @@ def main_control():
     scriptDir = os.path.dirname(__file__)
     paths_file = scriptDir + paths_file + '.txt'
     file = open(paths_file)
+    file.readline() #Skip header
 
     delta_realTime = 0
     delta_simTime = 0
