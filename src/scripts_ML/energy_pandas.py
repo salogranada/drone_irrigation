@@ -25,7 +25,7 @@ flight_df.columns = flight_df.columns.str.strip()
 flight_df = flight_df.loc[flight_df['simTime'] > 0]
 
 #Creates data frame for the  random_paths file.
-path_df = pd.read_csv('../data_base/random_paths/path_v4_header_p2.txt', sep="|")
+path_df = pd.read_csv('../data_base/random_paths/path_v4_header_p2_salo.txt', sep="|")
 
 #New data frame with energies
 energy_df = path_df

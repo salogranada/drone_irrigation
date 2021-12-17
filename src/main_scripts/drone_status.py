@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from sys import path_hooks
+#from sys import path_hooks
 import rospy
 import time
 import numpy as np
@@ -16,7 +16,8 @@ import os
 #****************************************
 #FOR ANY NEW PATH SIMULATION YOU HAVE TO SPECIFY SAVING 2 FILES! flight data and error report.
 #****************************************
-
+flighData_filename = '/../data_base/flight_data/fd_pathv5_salo.txt' #Output
+errorLog_filename = '/../data_base/reports/errorlog_pathv5_salo.txt' #Output
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
@@ -131,12 +132,12 @@ def info_status():
 
 	#Opens file for savig data from flight
 	scriptDir = os.path.dirname(__file__)
-	flight_data = scriptDir +'/../data_base/flight_data/flight_data_2000_p4.txt'
+	flight_data = scriptDir + flighData_filename
 	f = open(flight_data, "w")
-	f.write('route_num|missing_points|simTime|tankMass|force_array|torque_array|rpm_list|droneVel|error_target_vel|error_target_dist|xDisplacement|yDisplacement|x_avg_Vel|y_avg_Vel \n')
+	f.write('route_num|missing_points|simTime|tankMass|force_array|torque_array|rpm_list|droneVel|error_target_vel|error_target_dist|xDisplacement|yDisplacement|x_avg_Vel|y_avg_Vel|pos_x|pos_y|pos_z \n')
 	
 	#opens file for error log.
-	error_report = scriptDir +'/../data_base/reports/error_report_2000paths_p4.txt'
+	error_report = scriptDir + errorLog_filename
 	error_file = open(error_report, "w")
 	error_file.write('route_num|point|simTime|tankMass|RHO|target_rho|log \n')
 
@@ -191,9 +192,9 @@ def info_status():
 		terminal_msg = terminal_msg + 'Rho: ' + str(round(rho,3)) + '   target_rho: ' + str(round(target_rho,3)) +'  Route num: '+ str(route_num) + '  Missing_points: '+ str(missing_points)  +'\n \n'
 		terminal_msg = terminal_msg + 'Drone_Vel: ' + str(round(droneVel,3)) + '   Axis Vel: '+ str(round(xVel,3)) +' - ' + str(round(yVel,3))+ '   Displacement: '+ str(round(saveDistX,3)) +' - ' + str(round(saveDistY,3)) + '\n \n'
 
-		#terminal_msg = terminal_msg + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
-		#terminal_msg = terminal_msg + 'Motor Torque: ' + str(torque) + '\n \n'
-		#terminal_msg = terminal_msg + 'Motor RPM: ' + str(rpm_list) +'\n \n'
+		terminal_msg = terminal_msg + 'Motor Forces: ' + str(force) + '\n \n'#+ str(round(force[0],3)) + ', '+ str(round(force[1],3))+ ', '+ str(round(force[2],3))+ ', '+ str(round(force[2],3))+ '\n'
+		terminal_msg = terminal_msg + 'Motor Torque: ' + str(torque) + '\n \n'
+		terminal_msg = terminal_msg + 'Motor RPM: ' + str(rpm_list) +'\n \n'
 		terminal_msg = terminal_msg + 'Tank Mass: ' + str(round(tankMass,3)) + ' Kg, Tank Volume: ' + tankVolume + ' Tank Restart: ' + str(restartTank) +'\n \n'
 
 		terminal_msg = terminal_msg + 'RealTime: ' + str(round(realTime,4)) +' simTime: ' + str(round(simTime,4)) + ' PathTime: ' + str(round(pathTime,3))
@@ -208,7 +209,7 @@ def info_status():
 			error_target_dist = target_rho
 
 			#Write in flight_data file.
-			f.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(force) + '|'+ str(torque)  +'|'+ str(rpm_list)+ '|' + str(droneVel) + '|' + str(error_target_vel) + '|' + str(error_target_dist)+ '|' + str(saveDistX)+ '|' + str(saveDistY)+ '|' + str(xVel)+ '|' + str(yVel) +'\n')
+			f.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(force) + '|'+ str(torque)  +'|'+ str(rpm_list)+ '|' + str(droneVel) + '|' + str(error_target_vel) + '|' + str(error_target_dist)+ '|' + str(saveDistX)+ '|' + str(saveDistY)+ '|' + str(xVel)+ '|' + str(yVel)+ '|' + str(pos_x)+ '|' + str(pos_y)+ '|' + str(pos_z) +'\n')
 			
 			#Write in error reports file.
 			if simTime < 0:
