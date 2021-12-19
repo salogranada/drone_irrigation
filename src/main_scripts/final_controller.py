@@ -179,6 +179,8 @@ def main_control():
                             deltaY = endPos[1] - posTarget_y #Distance error Y-axis [particle]
 
                             rho = np.sqrt(deltaX**2 + deltaY**2)
+                            prev_rho = rho
+
 
                             path_vel = rho/tiempito
 
@@ -276,7 +278,7 @@ def main_control():
                                     break
 
                                 #If TARGET went out of control and lost the WAYPOINT. Restart.
-                                if rho > 15:
+                                if prev_rho - rho < 0:
                                     print('In Route: ' + str(linea[0])+ ' In point: ' + str(coord_aux) + ' SimTime: ' + str(simTime_actual) + ' RHO: ' + str(rho)+ ' TARGET out of control and lost the WAYPOINT')
                                     restartTank = True
                                     pub_restart.publish(restartTank)
@@ -291,6 +293,8 @@ def main_control():
                                     simTime_anterior = 0
                                     tankMass = 0
                                     break
+                                
+                                prev_rho = rho
 
                             delta_simTime = simTime_actual - simTime_anterior
                             delta_realTime = realTime_actual - realTime_anterior
