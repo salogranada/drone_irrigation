@@ -14,7 +14,7 @@ import time
 #****************************************
 #FOR ANY SIMULATION YOU HAVE TO SPECIFY THE PATH FILE!
 #****************************************
-paths_file = '/../data_base/random_paths/path_v5_salo' #Input FILE NEEDS TO HAVE HEADER
+paths_file = '/../data_base/random_paths/path_v9_salo' #Input FILE NEEDS TO HAVE HEADER
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
@@ -169,6 +169,8 @@ def main_control():
                         
                         coord_aux = coord.split(',') #Splits into X,Y,Z coordinates
 
+                        contador = contador + 1 #Helps keeping track of which is current point.
+
                         if coord_aux[0] != '':
                             coord_x = coord_aux[0]
                             coord_y = coord_aux[1]
@@ -181,10 +183,8 @@ def main_control():
                             rho = np.sqrt(deltaX**2 + deltaY**2)
                             prev_rho = rho
 
-
                             path_vel = rho/tiempito
 
-                            contador = contador + 1
 
                             #Update simulation and real time.
                             simTime_actual = simTime
@@ -229,6 +229,8 @@ def main_control():
 
                                 if simTime_actual - sim_anterior2 < 0:
                                     sim_anterior2 = 0
+                                if delta_simTime < 0 :
+                                    simTime_anterior = 0
 
                                 #print('sim_anterior2: ', round(sim_anterior2,4), round(simTime_actual - sim_anterior2,3))
                                 #sys.stdout.write("\033[K") # Clear to the end of line
@@ -238,7 +240,7 @@ def main_control():
                                 #Simulation can go faster than real time and still behave as supposed.
                                 if simTime_actual - sim_anterior2 >= 1:
 
-                                    print('Publishing correctly                      ' + str(simTime))
+                                    print('Publishing correctly                      Simtime: ' + str(simTime))
                                     sys.stdout.write("\033[K") # Clear to the end of line
                                     sys.stdout.write("\033[F") # Cursor up one line
 
@@ -277,8 +279,17 @@ def main_control():
                                     tankMass = 0
                                     break
 
-                                #If TARGET went out of control and lost the WAYPOINT. Restart.
+                                #If TARGET lost the WAYPOINT. Try recalculating step.
                                 if prev_rho - rho < 0:
+                                    print('+++++++++++++++++++++++++++++++SE ESTA ALEJANDO!+++++++++++++++++')
+                                    deltaX = endPos[0] - posTarget_x #Distance error X-axis [particle]
+                                    deltaY = endPos[1] - posTarget_y #Distance error Y-axis [particle]
+                                    #Target (particle) conestant velocity.
+                                    v_x = deltaX/tiempito    
+                                    v_y = deltaY/tiempito
+                                
+                                #If TARGET went out of control and lost the WAYPOINT. Restart.
+                                elif prev_rho - rho < -3:
                                     print('In Route: ' + str(linea[0])+ ' In point: ' + str(coord_aux) + ' SimTime: ' + str(simTime_actual) + ' RHO: ' + str(rho)+ ' TARGET out of control and lost the WAYPOINT')
                                     restartTank = True
                                     pub_restart.publish(restartTank)
@@ -294,7 +305,7 @@ def main_control():
                                     tankMass = 0
                                     break
                                 
-                                prev_rho = rho
+                                prev_rho = rho #Helps checking if drone is going in wrong direction
 
                             delta_simTime = simTime_actual - simTime_anterior
                             delta_realTime = realTime_actual - realTime_anterior
@@ -314,7 +325,8 @@ def main_control():
 
             print('                           WAIT 5 SECONDS                  -')
             time.sleep(5)
-            
+            simTime_anterior = 0
+            delta_realTime, delta_simTime = 0,0
             line = file.readline() #Read next path
             print('**************************Read next line*********************')
             
