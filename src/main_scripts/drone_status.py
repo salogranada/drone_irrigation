@@ -16,8 +16,8 @@ import os
 #****************************************
 #FOR ANY NEW PATH SIMULATION YOU HAVE TO SPECIFY SAVING 2 FILES! flight data and error report.
 #****************************************
-flighData_filename = '/../data_base/flight_data/fd_pathv5_salo.txt' #Output
-errorLog_filename = '/../data_base/reports/errorlog_pathv5_salo.txt' #Output
+flighData_filename = '/../data_base/flight_data/fd_pathv9_salo_2.txt' #Output
+errorLog_filename = '/../data_base/reports/errorlog_pathv9_salo_2.txt' #Output
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
@@ -216,11 +216,11 @@ def info_status():
 				#error_file.write('In Route: ' + str(route_num)+ ' In point: ' + str(missing_points) + ' SimTime: ' + str(round(simTime,4)) + ' TankMass: ' + str(round(tankMass,4))+  ' |Negative Simtime \n')
 				error_file.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(rho) + '|'+ str(target_rho) + '|Negative Simtime \n')
 
-			if rho > 15:
+			if tankMass == 10.0009892578125:
 				#error_file.write('In Route: ' + str(route_num)+ ' In point: ' + str(missing_points) + ' SimTime: ' + str(round(simTime,4)) + ' RHO: ' + str(round(rho,4)) + ' |TARGET out of control and lost the WAYPOINT \n')
-				error_file.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(rho) + '|'+ str(target_rho) + '|TARGET out of control and lost the WAYPOINT \n')
+				error_file.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(rho) + '|'+ str(target_rho) + '|STATIC tankmass \n')
 
-			elif target_rho > 2:
+			if target_rho > 2:
 				error_file.write(str(route_num) + '|' + str(missing_points) + '|' + str(simTime) + '|' + str(tankMass) + '|' + str(rho) + '|'+ str(target_rho) + '|DRONE out of control and lost the TARGET \n')
 
 		time.sleep(1)

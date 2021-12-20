@@ -10,15 +10,15 @@ import pandas as pd
 #FOR ANY NEW DATA YOU HAVE TO SPECIFY 5 FILES! 
 #*********************************************
 #INPUT
-flight_data_filename = '../data_base/flight_data/fd_pathv5_salo.txt'
-path_data_filename = '../data_base/random_paths/path_v5_salo.txt'
-errorLog_filename = '../data_base/reports/errorlog_pathv5_salo.txt'
+flight_data_filename = '../data_base/flight_data/fd_pathv7_pc76.txt'
+path_data_filename = '../data_base/random_paths/path_v7_pc76.txt'
+errorLog_filename = '../data_base/reports/errorlog_pathv7_pc76.txt'
 #OUTPUT
-energy_df_filename = '../data_base/paths_energy/features_pathv5_salo.csv' #energy_df (where you save the energy and features output)
-totals_df_filename = '../data_base/paths_totals/totals_pathv5_salo.csv' #totals_df (where you save total (cummulative) output)
+energy_df_filename = '../data_base/paths_energy/features_pathv7_pc76.csv' #energy_df (where you save the energy and features output)
+totals_df_filename = '../data_base/paths_totals/totals_pathv7_pc76.csv' #totals_df (where you save total (cummulative) output)
 #*********************************************
 
-print('Starting energy calculation... wait till its done.')
+print('Starting features calculation... wait till its done.')
 
 #Opens data frame for the flight data
 flight_df = pd.read_csv(flight_data_filename, sep="|")
@@ -54,7 +54,7 @@ for idex_path, row_path_specs in path_df.iterrows():
     
     total_time_path = 0
     coordX_old, coordY_old = 0, 0
-    sum_dist = 0
+    sum_dist, sum_distX, sum_distY = 0,0,0
     intPoints_list =[]
 
     current_path = int(row_path_specs.loc['path_num'])
