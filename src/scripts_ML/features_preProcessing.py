@@ -10,15 +10,15 @@ import pandas as pd
 #FOR ANY NEW DATA YOU HAVE TO SPECIFY 5 FILES! 
 #*********************************************
 #INPUT
-flight_data_filename = '../data_base/flight_data/fd_pathv5_salo.txt'
-path_data_filename = '../data_base/random_paths/path_v5_salo.txt'
-errorLog_filename = '../data_base/reports/errorlog_pathv5_salo.txt'
+flight_data_filename = '../data_base/flight_data/fd_pathv9_pc76_1.txt'
+path_data_filename = '../data_base/random_paths/path_v9_pc76.txt'
+errorLog_filename = '../data_base/reports/errorlog_pathv9_pc76_1.txt'
 #OUTPUT
-energy_df_filename = '../data_base/paths_energy/features_pathv5_salo.csv' #energy_df (where you save the energy and features output)
-totals_df_filename = '../data_base/paths_totals/totals_pathv5_salo.csv' #totals_df (where you save total (cummulative) output)
+energy_df_filename = '../data_base/paths_energy/features_pathv9_pc76_1.csv' #energy_df (where you save the energy and features output)
+totals_df_filename = '../data_base/paths_totals/totals_pathv9_pc76_1.csv' #totals_df (where you save total (cummulative) output)
 #*********************************************
 
-print('Starting energy calculation... wait till its done.')
+print('Starting features calculation... wait till its done.')
 
 #Opens data frame for the flight data
 flight_df = pd.read_csv(flight_data_filename, sep="|")
@@ -54,7 +54,7 @@ for idex_path, row_path_specs in path_df.iterrows():
     
     total_time_path = 0
     coordX_old, coordY_old = 0, 0
-    sum_dist = 0
+    sum_dist, sum_distX, sum_distY = 0,0,0
     intPoints_list =[]
 
     current_path = int(row_path_specs.loc['path_num'])
@@ -72,9 +72,12 @@ for idex_path, row_path_specs in path_df.iterrows():
     for current_point in range(len(intPoints_list)-1,-1,-1):
 
         #Restarts sums for each path
+        m1_sum_force,m2_sum_force, m3_sum_force,m4_sum_force = 0,0,0,0
         m1_sum_rpm,m2_sum_rpm, m3_sum_rpm,m4_sum_rpm = 0,0,0,0
         m1_sum_torque,m2_sum_torque, m3_sum_torque,m4_sum_torque = 0,0,0,0
+        rpm_list = [0,0,0,0]
         energy = 0
+        energy_new = 0
 
         #------------------------------
         #Total TIME in path calculation
@@ -116,13 +119,28 @@ for idex_path, row_path_specs in path_df.iterrows():
                 #Iters through all data in one of the points in flight_data.txt file
                 for index, row_point_specs in current_pathPoint_info.iterrows():
 
+                    #RPM for each motor calculation. 
+                    c = 0.6
+                    e_d = 0.88 #diameter effectiveness
+                    theta = 25 #blade twist angle (deg)
+                    p = 1.225 #air density kg/m^3
+                    R = (1.4974e-01)/2 #blade radio
+                    k = 2*c/4*R #Motor-propeller Force Constant
+                    C_T = (4/3)*k*theta*(1-(1-e_d)**3) - k*(np.sqrt(k*(k+1))- np.sqrt(k))*(1-(1-e_d)**2)
+
                     #Gets how much time the drone lasted in that point
                     sim_drone_time = current_pathPoint_info['simTime'].iloc[-1]
 
+                    m1_force, m2_force, m3_force, m4_force = row_point_specs['force_array'].split(',')
                     m1_rpm, m2_rpm, m3_rpm, m4_rpm = row_point_specs['rpm_list'].split(',')
                     m1_torque, m2_torque, m3_torque, m4_torque = row_point_specs['torque_array'].split(',')
 
                     #Clean obtained string
+                    m1_force = m1_force.split('[')
+                    m1_force = m1_force[1].replace('[','')
+                    m4_force = m4_force.split(']')
+                    m4_force = m4_force[0].replace(']','')
+
                     m1_rpm = m1_rpm.split('[')
                     m1_rpm = m1_rpm[1].replace('[','')
                     m4_rpm = m4_rpm.split(']')
@@ -133,27 +151,41 @@ for idex_path, row_path_specs in path_df.iterrows():
                     m4_torque = m4_torque.split(']')
                     m4_torque = m4_torque[0].replace(']','')
 
-                    m1_sum_rpm = m1_sum_rpm + float(float(m1_rpm))
-                    m2_sum_rpm = m2_sum_rpm + float(float(m2_rpm))
-                    m3_sum_rpm = m3_sum_rpm + float(float(m3_rpm))
-                    m4_sum_rpm = m4_sum_rpm + float(float(m4_rpm))
+                    #Adds all exerted force in current point.
+                    m1_sum_force = m1_sum_force + abs(float(float(m1_force)))
+                    m2_sum_force = m2_sum_force + abs(float(float(m2_force)))
+                    m3_sum_force = m3_sum_force + abs(float(float(m3_force)))
+                    m4_sum_force = m4_sum_force + abs(float(float(m4_force)))
+
+                    m1_sum_rpm = m1_sum_rpm + abs(float(float(m1_rpm)))
+                    m2_sum_rpm = m2_sum_rpm + abs(float(float(m2_rpm)))
+                    m3_sum_rpm = m3_sum_rpm + abs(float(float(m3_rpm)))
+                    m4_sum_rpm = m4_sum_rpm + abs(float(float(m4_rpm)))
 
                     m1_sum_torque = m1_sum_torque + abs(float(float(m1_torque)))
                     m2_sum_torque = m2_sum_torque + abs(float(float(m2_torque)))
                     m3_sum_torque = m3_sum_torque + abs(float(float(m3_torque)))
                     m4_sum_torque = m4_sum_torque + abs(float(float(m4_torque)))
 
+                #For each of the motors calculates its RPM depending on the exerted force.
+                force = [m1_sum_force, m2_sum_force, m3_sum_force, m4_sum_force]
+                for motor in range(len(force)):
+                    rpm = np.sqrt(abs(force[motor])/((1/16)*p*np.pi*(R**4)*(e_d**4)*C_T))
+                    rpm_list[motor] = rpm
+
                 total_rpm = [m1_sum_rpm, m2_sum_rpm, m3_sum_rpm, m4_sum_rpm]
                 total_torque = [m1_sum_torque, m2_sum_torque, m3_sum_torque, m4_sum_torque]
 
                 energy = np.abs(np.dot(np.array(total_rpm), np.array(total_torque)))
+                energy_new = np.abs(np.dot(np.array(rpm_list), np.array(total_torque)))
+
                 teorical_vel = current_point_dist/current_time
 
                 #print(total_rpm, total_torque, energy)
 
                 #Only save those that really used energy.
                 if energy != 0:
-                    new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,current_point_Xdist, current_point_Ydist, teorical_vel,energy]], columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','teo_Xdist','teo_Ydist', 'teo_point_vel','Energy'])
+                    new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,current_point_Xdist, current_point_Ydist, teorical_vel,energy, energy_new]], columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','teo_Xdist','teo_Ydist', 'teo_point_vel','Energy','energy_new'])
                     energy_df = energy_df.append(new_df, ignore_index=True)
                     #print(energy_df)
 
