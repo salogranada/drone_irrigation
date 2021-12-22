@@ -16,8 +16,8 @@ import os
 #****************************************
 #FOR ANY NEW PATH SIMULATION YOU HAVE TO SPECIFY SAVING 2 FILES! flight data and error report.
 #****************************************
-flighData_filename = '/../data_base/flight_data/fd_pathv9_salo_2.txt' #Output
-errorLog_filename = '/../data_base/reports/errorlog_pathv9_salo_2.txt' #Output
+flighData_filename = '/../data_base/flight_data/fd_pathv8_salo.txt' #Output
+errorLog_filename = '/../data_base/reports/errorlog_pathv8_salo.txt' #Output
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
@@ -133,12 +133,12 @@ def info_status():
 	#Opens file for savig data from flight
 	scriptDir = os.path.dirname(__file__)
 	flight_data = scriptDir + flighData_filename
-	f = open(flight_data, "w")
+	f = open(flight_data, "a")
 	f.write('route_num|missing_points|simTime|tankMass|force_array|torque_array|rpm_list|droneVel|error_target_vel|error_target_dist|xDisplacement|yDisplacement|x_avg_Vel|y_avg_Vel|pos_x|pos_y|pos_z \n')
 	
 	#opens file for error log.
 	error_report = scriptDir + errorLog_filename
-	error_file = open(error_report, "w")
+	error_file = open(error_report, "a")
 	error_file.write('route_num|point|simTime|tankMass|RHO|target_rho|log \n')
 
 	initial_points = missing_points
