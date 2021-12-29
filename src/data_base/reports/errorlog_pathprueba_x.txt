@@ -1,0 +1,4 @@
+route_num|point|simTime|tankMass|RHO|target_rho|log 
+0|0|0|10.0009892578125|0|0|STATIC tankmass 
+0|0|0|10.0009892578125|0|0|STATIC tankmass 
+1.0|3.0|0.05000019073486328|10.0009892578125|1.0|4.475118839764036e-05|STATIC tankmass 
