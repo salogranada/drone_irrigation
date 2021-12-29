@@ -39,7 +39,7 @@ def canMove(posX,posY,movX,movY,map):
     ans = False
     posX1 = posX + movX
     posY1 = posY + movY
-    if map[posX1,posY1] != 0:
+    if map[posY1,posX1] != 0:
         ans = True
     return ans
 
@@ -88,12 +88,22 @@ def randomPath(maxTime,minTimePP,maxTimePP,size,flightAltitude,posArrayInitial):
             contMove += 1
             #print(contMove)
 
-            if not flagMove and contMove < int(size/2):
+            if not flagMove and contMove <= int(size/2):
                 path.append([posX,posY,flightAltitude])
                 cont += 1
         contLimit+=1
 
     return baseArray_path,path,time_array
 
-mapa,path,time = randomPath(700,40,80,20,1,[5,5])  
-print(path) 
+mapa,path,time = randomPath(700,40,80,10,1,[5,5])  
+
+
+mapa,path,time = randomPath(700,40,80,10,1,[5,5])   
+path = np.array(path)
+print(path)
+plt.style.use('Solarize_Light2')
+plt.plot(path[:,0],path[:,1])
+plt.xlim([0,10])
+plt.ylim([0,10])
+plt.gca().invert_yaxis()
+plt.show()
