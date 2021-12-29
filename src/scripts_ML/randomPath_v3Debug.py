@@ -67,7 +67,7 @@ def randomPath(maxTime,minTimePP,maxTimePP,size,flightAltitude,posArrayInitial):
     cont = 0
     contLimit = 0
 
-    while not np.all(baseArray_path == 0) and cont < time_array.shape[0]-1 and contLimit <=10000:
+    while not np.all(baseArray_path == 0) and cont < time_array.shape[0] and contLimit <=10000:
         #Decide the direction
         dir = random.randint(1,8)
         movX,movY = movement(dir)
@@ -76,7 +76,7 @@ def randomPath(maxTime,minTimePP,maxTimePP,size,flightAltitude,posArrayInitial):
         flagMove = canMove(posX,posY,movX,movY,baseArray_path)
         contMove = 0
 
-        while contMove < int(size/2) and flagMove:
+        while contMove <= int(size/2) and flagMove:
             #Move
             posX = posX + movX
             posY = posY + movY
@@ -95,15 +95,15 @@ def randomPath(maxTime,minTimePP,maxTimePP,size,flightAltitude,posArrayInitial):
 
     return baseArray_path,path,time_array
 
-mapa,path,time = randomPath(700,40,80,10,1,[5,5])  
+#mapa,path,time = randomPath(700,40,80,10,1,[5,5])  
 
 
-mapa,path,time = randomPath(700,40,80,10,1,[5,5])   
+mapa,path,time = randomPath(700,50,100,10,1,[5,5])   
 path = np.array(path)
-print(path)
+print(path,time)
 plt.style.use('Solarize_Light2')
 plt.plot(path[:,0],path[:,1])
-plt.xlim([0,10])
-plt.ylim([0,10])
+plt.xlim([0,8])
+plt.ylim([0,8])
 plt.gca().invert_yaxis()
 plt.show()
