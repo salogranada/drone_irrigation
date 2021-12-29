@@ -14,7 +14,7 @@ import time
 #****************************************
 #FOR ANY SIMULATION YOU HAVE TO SPECIFY THE PATH FILE!
 #****************************************
-paths_file = '/../data_base/random_paths/path_v9_salo' #Input FILE NEEDS TO HAVE HEADER
+paths_file = '/../data_base/random_paths/path_v8_salo' #Input FILE NEEDS TO HAVE HEADER
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
@@ -312,11 +312,27 @@ def main_control():
             
             #Wait till drone reaches particle before starting new path...
             while target_rho > 0.08:
+                
+                deltaX = endPos[0] - posTarget_x #Distance error X-axis [particle]
+                deltaY = endPos[1] - posTarget_y #Distance error Y-axis [particle]
+                rho = np.sqrt(deltaX**2 + deltaY**2)
+
                 target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
                 sim_anterior2 = 0
                 print('Wait till drone reaches particle before starting new path... ', round(target_rho,3))
                 sys.stdout.write("\033[K") # Clear to the end of line
                 sys.stdout.write("\033[F") # Cursor up one line
+                simTime_actual = simTime
+                realTime_actual = realTime
+
+                delta_simTime = simTime_actual - simTime_anterior
+                delta_realTime = realTime_actual - realTime_anterior
+
+                controller_time.data = [delta_realTime, delta_simTime]
+                pub_time.publish(controller_time)
+                drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2], path_vel, float(linea[0]), missing_points, droneVel,target_rho] #Estructure : [rho, pathTime, EndPos, path_vel, route No., missing_points, dronevel,target_rho]
+                pub_status.publish(drone_status)
+
                 #restartTank = True
                 #pub_restart.publish(restartTank)
                 
