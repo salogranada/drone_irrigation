@@ -13,25 +13,25 @@ def movement(direction):
     mov_x = 0
     mov_y = 0
     if direction == 1:
-        mov_y = 1
+        mov_y = -1
     elif direction == 2:
         mov_x = 1
-        mov_y = 1
+        mov_y = -1
     elif direction == 3:
         mov_x = 1
     elif direction == 4:
         mov_x = 1
-        mov_y = -1
+        mov_y = 1
     elif direction == 5:
-        mov_y = -1
+        mov_y = 1
     elif direction == 6:
         mov_x = -1
-        mov_y = -1
+        mov_y = 1
     elif direction == 7:
         mov_x = -1
     else:
         mov_x = -1
-        mov_y = 1
+        mov_y = -1
     return mov_x,mov_y  
 
 
@@ -61,7 +61,7 @@ def randomPath(maxTime,minTimePP,maxTimePP,size,flightAltitude,posArrayInitial):
     #Create the Map/Grid
     baseArray_path = np.ones((size,size))
     baseArray_path = np.pad(baseArray_path,pad_width=1)
-    baseArray_path[posX,posY] = 0
+    baseArray_path[posY,posX] = 0
 
     path = [[posX,posY,flightAltitude]]
     cont = 0
@@ -73,7 +73,7 @@ def randomPath(maxTime,minTimePP,maxTimePP,size,flightAltitude,posArrayInitial):
         movX,movY = movement(dir)
 
         #Can move in that direction?
-        flagMove = canMove(posX,posY,movX,movY,baseArray_path.T)
+        flagMove = canMove(posX,posY,movX,movY,baseArray_path)
         contMove = 0
 
         while contMove < int(size/2) and flagMove:
@@ -81,14 +81,14 @@ def randomPath(maxTime,minTimePP,maxTimePP,size,flightAltitude,posArrayInitial):
             posX = posX + movX
             posY = posY + movY
             #Upload Map/Grid 
-            baseArray_path[posX,posY] = 0
+            baseArray_path[posY,posX] = 0
 
             #Can continue move in that direction?
-            flagMove = canMove(posX,posY,movX,movY,baseArray_path.T)
+            flagMove = canMove(posX,posY,movX,movY,baseArray_path)
             contMove += 1
             #print(contMove)
 
-            if not flagMove:
+            if not flagMove and contMove < int(size/2):
                 path.append([posX,posY,flightAltitude])
                 cont += 1
         contLimit+=1
