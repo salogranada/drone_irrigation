@@ -14,7 +14,7 @@ import time
 #****************************************
 #FOR ANY SIMULATION YOU HAVE TO SPECIFY THE PATH FILE!
 #****************************************
-paths_file = '/../data_base/random_paths/path_v8_salo' #Input FILE NEEDS TO HAVE HEADER
+paths_file = '/../data_base/random_paths/path_v12_salo' #Input FILE NEEDS TO HAVE HEADER
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
@@ -264,7 +264,7 @@ def main_control():
 
                                 #If DRONE went out of control and lost the target. Restart.
                                 if target_rho > 2:
-                                    print('In Route: ' + str(linea[0])+ ' In point: ' + str(coord_aux) + ' SimTime: ' + str(simTime_actual) + ' TargetRHO: ' + str(target_rho)+ ' DRONE out of control and lost the TARGET')
+                                    print(' TargetRHO: ' + str(target_rho)+ ' DRONE out of control and lost the TARGET')
                                     restartTank = True
                                     pub_restart.publish(restartTank)
                                     time.sleep(2)
@@ -290,7 +290,7 @@ def main_control():
                                 
                                 #If TARGET went out of control and lost the WAYPOINT. Restart.
                                 elif prev_rho - rho < -3:
-                                    print('In Route: ' + str(linea[0])+ ' In point: ' + str(coord_aux) + ' SimTime: ' + str(simTime_actual) + ' RHO: ' + str(rho)+ ' TARGET out of control and lost the WAYPOINT')
+                                    print(' RHO: ' + str(rho)+ ' TARGET out of control and lost the WAYPOINT')
                                     restartTank = True
                                     pub_restart.publish(restartTank)
                                     time.sleep(2)
@@ -312,11 +312,29 @@ def main_control():
             
             #Wait till drone reaches particle before starting new path...
             while target_rho > 0.08:
+                
+                deltaX = endPos[0] - posTarget_x #Distance error X-axis [particle]
+                deltaY = endPos[1] - posTarget_y #Distance error Y-axis [particle]
+                rho = np.sqrt(deltaX**2 + deltaY**2)
+
                 target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
                 sim_anterior2 = 0
                 print('Wait till drone reaches particle before starting new path... ', round(target_rho,3))
                 sys.stdout.write("\033[K") # Clear to the end of line
                 sys.stdout.write("\033[F") # Cursor up one line
+                simTime_actual = simTime
+                realTime_actual = realTime
+
+                delta_simTime = simTime_actual - simTime_anterior
+                delta_realTime = realTime_actual - realTime_anterior
+
+                paso_x, paso_y = 0,0
+
+                controller_time.data = [delta_realTime, delta_simTime]
+                pub_time.publish(controller_time)
+                drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2], path_vel, float(linea[0]), missing_points, droneVel,target_rho] #Estructure : [rho, pathTime, EndPos, path_vel, route No., missing_points, dronevel,target_rho]
+                pub_status.publish(drone_status)
+
                 #restartTank = True
                 #pub_restart.publish(restartTank)
                 
@@ -327,6 +345,7 @@ def main_control():
             time.sleep(5)
             simTime_anterior = 0
             delta_realTime, delta_simTime = 0,0
+            posTarget_x,posTarget_y,pos_x,pos_y = 0,0,0,0
             line = file.readline() #Read next path
             print('**************************Read next line*********************')
             
