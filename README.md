@@ -58,7 +58,7 @@ Other distributions might not work properly so it is recommended to use one of t
   ./coppeliaSim.sh
   ```
   
-Open tracking_controller.ttt scene (this file is inside this repository, in Scene folder).  
+Open drone_control.ttt scene (this file is inside this repository, in Scene folder).  
   
 3. Run the drone controller, on another terminal run (Make sure you source the devel space on each terminal session you want to use the simulation on):
 
@@ -68,22 +68,25 @@ Open tracking_controller.ttt scene (this file is inside this repository, in Scen
   roslaunch drones_pkg simulation.launch
   ```
   
-A black box should show up in the simulation and the drone should go towards this waypoint. The drone would complete a path with various points defined in a txt file. When there is no more waypoints in the path you can stop the simulation and report files will be generated with flight data and error log.
+A black box should show up in the simulation and the particle should go towards this waypoint. The drone follows the particle. The drone would complete a path with various points defined in a txt file. When there is no more waypoints in the path you can stop the simulation and report files will be generated with flight data and error log.
 
 ## ROS API
 
-#### Subscribed Topics
+#### Published Topics
+* **`/drone_nextPose`** ([Float32MultiArray]) > final_controller.py
+* **`/drone_nextEuler`** ([Float32MultiArray]) > final_controller.py
+* **`/PE/Drone/tank_volume`** ([String]) > final_controller.py
+* **`/PE/Drone/drone_status`** ([Float32MultiArray]) > final_controller.py
+* **`PE/Drone/controller_time`** ([Float32MultiArray]) > final_controller.py
+* **`/PE/Drone/restart`** ([Bool]) > final_controller.py
+* **`/currentMass`** ([Float32]) > variableMass5.py
+
+#### Coppeliasim Published Topics
 * **`/simulationTime`** ([Float32])
 * **`/realTime`** ([Float32])
-* **`/currentMass`** ([Float32])
+* **`/force`** ([Float32MultiArray])
+* **`/torque`** ([Float32MultiArray])
+* **`/velocity`** ([Float32MultiArray])
 * **`/drone_pose`** ([Float32MultiArray])
-* **`/drone_orientation`** ([Float32MultiArray])
 * **`/target_pose`** ([Float32MultiArray])
-
-#### Published Topics
-* **`/drone_nextPose`** ([Float32MultiArray])
-* **`/drone_nextEuler`** ([Float32MultiArray])
-* **`/PE/Drone/tank_volume`** ([String])
-* **`/PE/Drone/drone_status`** ([Float32MultiArray])
-* **`PE/Drone/controller_time`** ([Float32MultiArray])
-* **`/PE/Drone/restart`** ([Bool])
+* **`/drone_orientation`** ([Float32MultiArray])
