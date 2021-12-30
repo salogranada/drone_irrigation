@@ -264,7 +264,7 @@ def main_control():
 
                                 #If DRONE went out of control and lost the target. Restart.
                                 if target_rho > 2:
-                                    print('In Route: ' + str(linea[0])+ ' In point: ' + str(coord_aux) + ' SimTime: ' + str(simTime_actual) + ' TargetRHO: ' + str(target_rho)+ ' DRONE out of control and lost the TARGET')
+                                    print(' TargetRHO: ' + str(target_rho)+ ' DRONE out of control and lost the TARGET')
                                     restartTank = True
                                     pub_restart.publish(restartTank)
                                     time.sleep(2)
@@ -290,7 +290,7 @@ def main_control():
                                 
                                 #If TARGET went out of control and lost the WAYPOINT. Restart.
                                 elif prev_rho - rho < -3:
-                                    print('In Route: ' + str(linea[0])+ ' In point: ' + str(coord_aux) + ' SimTime: ' + str(simTime_actual) + ' RHO: ' + str(rho)+ ' TARGET out of control and lost the WAYPOINT')
+                                    print(' RHO: ' + str(rho)+ ' TARGET out of control and lost the WAYPOINT')
                                     restartTank = True
                                     pub_restart.publish(restartTank)
                                     time.sleep(2)
@@ -328,6 +328,8 @@ def main_control():
                 delta_simTime = simTime_actual - simTime_anterior
                 delta_realTime = realTime_actual - realTime_anterior
 
+                paso_x, paso_y = 0,0
+
                 controller_time.data = [delta_realTime, delta_simTime]
                 pub_time.publish(controller_time)
                 drone_status.data = [rho, tiempito, endPos[0], endPos[1], endPos[2], path_vel, float(linea[0]), missing_points, droneVel,target_rho] #Estructure : [rho, pathTime, EndPos, path_vel, route No., missing_points, dronevel,target_rho]
@@ -343,6 +345,7 @@ def main_control():
             time.sleep(5)
             simTime_anterior = 0
             delta_realTime, delta_simTime = 0,0
+            posTarget_x,posTarget_y,pos_x,pos_y = 0,0,0,0
             line = file.readline() #Read next path
             print('**************************Read next line*********************')
             
