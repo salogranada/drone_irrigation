@@ -10,12 +10,12 @@ import pandas as pd
 #FOR ANY NEW DATA YOU HAVE TO SPECIFY 5 FILES! 
 #*********************************************
 #INPUT
-flight_data_filename = '../data_base/flight_data/fd_pathv8_saloCA.txt'
-path_data_filename = '../data_base/random_paths/path_v8_salo.txt'
-errorLog_filename = '../data_base/reports/errorlog_pathv8_saloCA.txt'
+flight_data_filename = '../data_base/flight_data/fd_pathY.txt'
+path_data_filename = '../data_base/random_paths/path_ye.txt'
+errorLog_filename = '../data_base/reports/errorlog_pathY.txt'
 #OUTPUT
-energy_df_filename = '../data_base/paths_energy/features_pathv8_CA.csv' #energy_df (where you save the energy and features output)
-totals_df_filename = '../data_base/paths_totals/totals_pathv8_CA.csv' #totals_df (where you save total (cummulative) output)
+energy_df_filename = '../data_base/paths_energy/features_pathY.csv' #energy_df (where you save the energy and features output)
+totals_df_filename = '../data_base/paths_totals/totals_pathY.csv' #totals_df (where you save total (cummulative) output)
 #*********************************************
 
 print('Starting features calculation... wait till its done.')
@@ -31,6 +31,8 @@ path_df = pd.read_csv(path_data_filename, sep="|")
 
 #Opens data frame for error file.
 error_df = pd.read_csv(errorLog_filename, sep="|")
+error_df.columns = error_df.columns.str.strip()
+error_df = error_df.loc[error_df['log'] != 'STATIC tankmass ']
 
 #Creates new data frame for saving energies
 energy_df = pd.DataFrame()  
@@ -120,20 +122,27 @@ for idex_path, row_path_specs in path_df.iterrows():
             
             #Help us check if current point is in error file. If it is, dont calculate energy.
             error_point = error_df.loc[( error_df['route_num'] == current_path )&(error_df['point'] == current_point )]
-            #if error_point.empty:
-            if True:
-
-                #Computes total SIMULATED xDisplacement and yDisplacement
+            if error_point.empty:
+            #if True:
+                #--------------------------
+                #Computes total SIMULATED xDisplacement and yDisplacement in one point.
+                #--------------------------
                 current_pathPoint_info['xDisplacement'].cumsum
                 current_pathPoint_info['yDisplacement'].cumsum
-
                 sim_Xdist = current_pathPoint_info['xDisplacement'].iloc[-1]
                 sim_Ydist = current_pathPoint_info['yDisplacement'].iloc[-1]
 
+                #--------------------------
+                #Computes distance error between drone and target (particle)
+                #--------------------------
+                current_pathPoint_info['error_target_dist'].mean
+                avg_error_target_dist = current_pathPoint_info['error_target_dist'].iloc[-1]
                 #Iters through all data in one of the points in flight_data.txt file
                 for index, row_point_specs in current_pathPoint_info.iterrows():
                     
+                    #--------------------------
                     #Computes simulated traveled distance
+                    #--------------------------
                     curr_pos_x = row_point_specs['pos_x']
                     curr_pos_y = row_point_specs['pos_y']
                     travel_dist = np.sqrt((curr_pos_x-old_pos_x)**2 + (curr_pos_y-old_pos_y)**2)
@@ -141,7 +150,7 @@ for idex_path, row_path_specs in path_df.iterrows():
                     old_pos_x = curr_pos_x
                     old_pos_y = curr_pos_y
 
-                    #RPM for each motor calculation. 
+                    #RPM calculation for each motor. 
                     c = 0.6
                     e_d = 0.88 #diameter effectiveness
                     theta = 25 #blade twist angle (deg)
@@ -220,7 +229,7 @@ for idex_path, row_path_specs in path_df.iterrows():
 
                 #Only save those that really used energy.
                 if energy != 0:
-                    new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,sim_point_dist,current_point_Xdist, current_point_Ydist,sim_Xdist,sim_Ydist,teorical_vel,energy, energy_new, avg_energy]], columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','sim_point_dist','teo_Xdist','teo_Ydist','sim_Xdist','sim_Ydist','teo_point_vel','Energy','energy_new','avg_energy'])
+                    new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,sim_point_dist,current_point_Xdist, current_point_Ydist,sim_Xdist,sim_Ydist,avg_error_target_dist,teorical_vel,energy, energy_new, avg_energy]], columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','sim_point_dist','teo_Xdist','teo_Ydist','sim_Xdist','sim_Ydist','avg_error_target_dist','teo_point_vel','Energy','energy_new','avg_energy'])
                     energy_df = energy_df.append(new_df, ignore_index=True)
                     #print(energy_df)
 
@@ -229,8 +238,8 @@ for idex_path, row_path_specs in path_df.iterrows():
     distX_list.append(sum_distX)
     distY_list.append(sum_distY)
     total_times_list.append(total_time_path)
-    energy_list.append(total_energy)
     avg_path_vel = np.array(dist_list)/np.array(total_times_list)
+    energy_list.append(total_energy)
 
     data_df = pd.DataFrame([[current_path]], columns=['path_num'])
     totals_df = totals_df.append(data_df, ignore_index=True)
