@@ -1,5 +1,13 @@
 # drone_irrigation
 
+This repository provides a Coppeliasim drone simulation. With the simulation you will be able to make the drone travel through a list of paths. Each path contains a set of points that the drone must reach. 
+
+After the drone finishes the path, 2 files will be generated, a flight data and an error log that will be stored in the data_base folder. With this files, energy consummed by the drone can be computed for further data analysis (features_preProcessing.py in scripts_ML folder) this code generates two new files. With the obtained features, further analysis can be made with Machine Learning models to compute which features are more relevant in the drone energy consumption.
+
+Authors: Salomón Granada Ulloque (s.granada@uniandes.edu.co) and Sebastían Murcia Ramirez (js.murcia@uniandes.edu.co)
+
+Any inquiries, troubleshooting, bugs, future projects contact these authors.
+
 ### Prerequisites
 
 1. The simulation requires ROS (Robot Operating System) and was mainly developed and tested with:
@@ -11,6 +19,12 @@ Other distributions might not work properly so it is recommended to use one of t
 2. CoppeliaSim V4.2.0 rev5 for Ubuntu 18.04.
 
   This software is free and you can download it from: https://coppeliarobotics.com/downloads
+
+3. Libaries
+
+  ```bash
+  pip3 install rospkg numpy scipy
+  ```
 
 #### Building
 
@@ -71,6 +85,8 @@ Open drone_control.ttt scene (this file is inside this repository, in Scene fold
 A black box should show up in the simulation and the particle should go towards this waypoint. The drone follows the particle. The drone would complete a path with various points defined in a txt file. When there is no more waypoints in the path you can stop the simulation and report files will be generated with flight data and error log.
 
 ## ROS API
+
+This section describes ROS topics that are available on the simulation.
 
 #### Published Topics
 * **`/drone_nextPose`** ([Float32MultiArray]) > final_controller.py
