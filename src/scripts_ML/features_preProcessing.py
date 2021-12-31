@@ -12,7 +12,7 @@ import pandas as pd
 #INPUT
 flight_data_filename = '../data_base/flight_data/fd_pathY.txt'
 path_data_filename = '../data_base/random_paths/path_ye.txt'
-errorLog_filename = '../data_base/reports/errorlog_pathY.txt'
+errorLog_filename = '../data_base/error_logs/errorlog_pathY.txt'
 #OUTPUT
 energy_df_filename = '../data_base/paths_energy/features_pathY.csv' #energy_df (where you save the energy and features output)
 totals_df_filename = '../data_base/paths_totals/totals_pathY.csv' #totals_df (where you save total (cummulative) output)
