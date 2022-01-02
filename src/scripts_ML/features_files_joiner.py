@@ -13,4 +13,4 @@ for filename in os.listdir("../data_base/paths_energy/"):
         total_features_df = total_features_df.append(energy_df, ignore_index=True)
         #print(total_features_df)
 
-total_features_df.to_csv('../data_base/paths_energy/joined_features_salo.csv') #Change name
+total_features_df.to_csv('../data_base/paths_energy/joined_features.csv') #Change name
