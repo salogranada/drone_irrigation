@@ -14,7 +14,7 @@ import time
 #****************************************
 #FOR ANY SIMULATION YOU HAVE TO SPECIFY THE PATH FILE!
 #****************************************
-paths_file = '/../data_base/random_paths/path_v12_salo' #Input FILE NEEDS TO HAVE HEADER
+paths_file = '/../data_base/random_paths/path_v12-2_salo' #Input FILE NEEDS TO HAVE HEADER
 
 #Author: Salomón Granada Ulloque
 #Email: s.granada@uniandes.edu.co
@@ -229,18 +229,20 @@ def main_control():
 
                                 if simTime_actual - sim_anterior2 < 0:
                                     sim_anterior2 = 0
+                                    print('eeeeeeeeeeeeeeeees menor a cerooooooooo')
                                 if delta_simTime < 0 :
                                     simTime_anterior = 0
+                                    print('deltaaaa menorrrrrr AAAAAAAAAAAAAAAAAAAAAAAAAAA')
 
-                                #print('sim_anterior2: ', round(sim_anterior2,4), round(simTime_actual - sim_anterior2,3))
-                                #sys.stdout.write("\033[K") # Clear to the end of line
-                                #sys.stdout.write("\033[F") # Cursor up one line
+                                print('sim_anterior2: ', round(sim_anterior2,4), round(simTime_actual - sim_anterior2,3))
+                                sys.stdout.write("\033[K") # Clear to the end of line
+                                sys.stdout.write("\033[F") # Cursor up one line
 
                                 #Only when 1 second has passed in simulation, publish the new position.
                                 #Simulation can go faster than real time and still behave as supposed.
                                 if simTime_actual - sim_anterior2 >= 1:
 
-                                    print('Publishing correctly                      Simtime: ' + str(simTime))
+                                    print('Publishing correctly                      Simtime: ' + str(round(simTime,4)))
                                     sys.stdout.write("\033[K") # Clear to the end of line
                                     sys.stdout.write("\033[F") # Cursor up one line
 
@@ -281,7 +283,7 @@ def main_control():
 
                                 #If TARGET lost the WAYPOINT. Try recalculating step.
                                 if prev_rho - rho < 0:
-                                    print('+++++++++++++++++++++++++++++++SE ESTA ALEJANDO!+++++++++++++++++')
+                                    print('+++++++++++++++++++++++++++++++PARTICLE IS GOING AWAY+++++++++++++++++')
                                     deltaX = endPos[0] - posTarget_x #Distance error X-axis [particle]
                                     deltaY = endPos[1] - posTarget_y #Distance error Y-axis [particle]
                                     #Target (particle) conestant velocity.
