@@ -10,12 +10,12 @@ import pandas as pd
 #FOR ANY NEW DATA YOU HAVE TO SPECIFY 5 FILES! 
 #*********************************************
 #INPUT
-flight_data_filename = '../data_base/flight_data/fd_pathY.txt'
-path_data_filename = '../data_base/random_paths/path_ye.txt'
-errorLog_filename = '../data_base/error_logs/errorlog_pathY.txt'
+flight_data_filename = '../data_base/flight_data/fd_pathv12_salo1.txt'
+path_data_filename = '../data_base/random_paths/path_v12_salo1.txt'
+errorLog_filename = '../data_base/error_logs/errorlog_pathv12_salo1.txt'
 #OUTPUT
-energy_df_filename = '../data_base/paths_energy/features_pathY.csv' #energy_df (where you save the energy and features output)
-totals_df_filename = '../data_base/paths_totals/totals_pathY.csv' #totals_df (where you save total (cummulative) output)
+energy_df_filename = '../data_base/paths_energy/features_pathv12_trial.csv' #energy_df (where you save the energy and features output)
+totals_df_filename = '../data_base/paths_totals/totals_pathv12_trial.csv' #totals_df (where you save total (cummulative) output)
 #*********************************************
 
 print('Starting features calculation... wait till its done.')
@@ -229,7 +229,7 @@ for idex_path, row_path_specs in path_df.iterrows():
 
                 #Only save those that really used energy.
                 if energy != 0:
-                    new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,sim_point_dist,current_point_Xdist, current_point_Ydist,sim_Xdist,sim_Ydist,avg_error_target_dist,teorical_vel,energy, energy_new, avg_energy]], columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','sim_point_dist','teo_Xdist','teo_Ydist','sim_Xdist','sim_Ydist','avg_error_target_dist','teo_point_vel','Energy','energy_new','avg_energy'])
+                    new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,sim_point_dist,current_point_Xdist, current_point_Ydist,sim_Xdist,sim_Ydist,avg_error_target_dist,teorical_vel,energy_new, avg_energy]], columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','sim_point_dist','teo_Xdist','teo_Ydist','sim_Xdist','sim_Ydist','avg_error_target_dist','teo_point_vel','Energy','avg_energy'])
                     energy_df = energy_df.append(new_df, ignore_index=True)
                     #print(energy_df)
 
