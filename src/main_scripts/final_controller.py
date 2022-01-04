@@ -89,8 +89,8 @@ def main_control():
     rate = rospy.Rate(10) #10hz
 
     #Topic publishing
-    pub_pose = rospy.Publisher('/drone_nextPose', Float32MultiArray, queue_size=10)
-    pub_euler = rospy.Publisher('/drone_nextEuler', Float32MultiArray, queue_size=10)
+    pub_pose = rospy.Publisher('/drone_nextPose', Float32MultiArray, queue_size=100)
+    #pub_euler = rospy.Publisher('/drone_nextEuler', Float32MultiArray, queue_size=10)
     pub_tank_volume = rospy.Publisher('/PE/Drone/tank_volume', String, queue_size=10)
     pub_status = rospy.Publisher('/PE/Drone/drone_status', Float32MultiArray, queue_size=10) #Status structure: [rho, tiempito, Endpos, path_vel, route No.]
     pub_time = rospy.Publisher('PE/Drone/controller_time', Float32MultiArray, queue_size=10)
@@ -117,7 +117,7 @@ def main_control():
     restartTank = False
 
     avance = Float32MultiArray()
-    avance_eu = Float32MultiArray()
+    #avance_eu = Float32MultiArray()
     drone_status = Float32MultiArray()
     controller_time = Float32MultiArray()
     tankVolume = String()
@@ -205,7 +205,7 @@ def main_control():
                             target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
 
                             #While we reach the point (with certain error), keep moving.
-                            while rho > 0.1:
+                            while rho > 0.3:
 
                                 actualDronePose = pos_x #For calculating drone velocity
 
@@ -250,10 +250,10 @@ def main_control():
                                     lastDronePose = actualDronePose
                                     
                                     avance.data = [posTarget_x+paso_x, posTarget_y+paso_y, endPos[2]]
-                                    avance_eu.data = [ang_x, ang_y, ang_z]
+                                    #avance_eu.data = [ang_x, ang_y, ang_z]
 
                                     pub_pose.publish(avance)
-                                    pub_euler.publish(avance_eu)
+                                    #pub_euler.publish(avance_eu)
                                     pub_tank_volume.publish(tankVolume)
 
                                     sim_anterior2 = simTime_actual
