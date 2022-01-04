@@ -14,8 +14,8 @@ flight_data_filename = '../data_base/flight_data/fd_pathv12_salo.txt'
 path_data_filename = '../data_base/random_paths/path_v12_salo.txt'
 errorLog_filename = '../data_base/error_logs/errorlog_pathv12_salo.txt'
 #OUTPUT
-energy_df_filename = '../data_base/paths_energy/feat_pathv12.csv' #energy_df (where you save the energy and features output)
-totals_df_filename = '../data_base/paths_totals/totalF_pathv12.csv' #totals_df (where you save total (cummulative) output)
+energy_df_filename = '/home/sebastian/github/SpecialProblem_Salo/drone_irrigation_vrep/src/data_base/paths_energy/features_pathv13.csv' #energy_df (where you save the energy and features output)
+totals_df_filename = '/home/sebastian/github/SpecialProblem_Salo/drone_irrigation_vrep/src/data_base/paths_totals/totals_pathv13.csv' #totals_df (where you save total (cummulative) output)
 #*********************************************
 
 print('Starting features calculation... wait till its done.')
@@ -256,6 +256,10 @@ totals_df['energy'] = energy_list
 totals_df = totals_df.loc[totals_df['energy'] > 0]
 
 #Save to CSV file
+file1 = open(energy_df_filename,mode='w')
+file2 = open(totals_df_filename,mode='w')
+file1.close()
+file2.close()
 energy_df.to_csv(energy_df_filename,index=False)
 totals_df.to_csv(totals_df_filename,index=False)
 
