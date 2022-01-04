@@ -89,7 +89,7 @@ def main_control():
     rate = rospy.Rate(10) #10hz
 
     #Topic publishing
-    pub_pose = rospy.Publisher('/drone_nextPose', Float32MultiArray, queue_size=50)
+    pub_pose = rospy.Publisher('/drone_nextPose', Float32MultiArray, queue_size=100)
     #pub_euler = rospy.Publisher('/drone_nextEuler', Float32MultiArray, queue_size=10)
     pub_tank_volume = rospy.Publisher('/PE/Drone/tank_volume', String, queue_size=10)
     pub_status = rospy.Publisher('/PE/Drone/drone_status', Float32MultiArray, queue_size=10) #Status structure: [rho, tiempito, Endpos, path_vel, route No.]
@@ -205,7 +205,7 @@ def main_control():
                             target_rho = np.sqrt((posTarget_x-pos_x)**2 + (posTarget_y-pos_y)**2)
 
                             #While we reach the point (with certain error), keep moving.
-                            while rho > 0.1:
+                            while rho > 0.3:
 
                                 actualDronePose = pos_x #For calculating drone velocity
 
