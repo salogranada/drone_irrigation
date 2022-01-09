@@ -118,9 +118,22 @@ for idex_path, row_path_specs in path_df.iterrows():
             sum_dist = sum_dist + current_point_dist
             sum_distX = sum_distX + current_point_Xdist
             sum_distY = sum_distY + current_point_Ydist
+
+            #--------------------------
+            #TEORICAL velocity in point calculation
+            #--------------------------
+            teorical_vel = current_point_dist/current_time
+            angle = np.arccos(coordX_new-coordX_old/current_point_dist)
+            teo_Xvel = teorical_vel * np.cos(angle)
+            teo_Yvel = teorical_vel * np.sin(angle)
+            print(coordX_old, coordY_old, '>',coordX_new, coordY_new)
+            print(angle, teo_Xvel, teo_Yvel)
+
             #Update current X and Y coord
             coordX_old = coordX_new
             coordY_old = coordY_new
+
+            
             
             #Help us check if current point is in error file. If it is, dont calculate energy.
             error_point = error_df.loc[( error_df['route_num'] == current_path )&(error_df['point'] == current_point )]
@@ -221,8 +234,6 @@ for idex_path, row_path_specs in path_df.iterrows():
                 energy = np.abs(np.dot(np.array(total_rpm), np.array(total_torque)))
                 energy_new = np.abs(np.dot(np.array(rpm_list), np.array(total_torque)))
                 avg_energy = np.abs(np.dot(np.array(avg_rpm_list), np.array(total_torque)))
-
-                teorical_vel = current_point_dist/current_time
 
                 total_energy = total_energy + energy_new
 
