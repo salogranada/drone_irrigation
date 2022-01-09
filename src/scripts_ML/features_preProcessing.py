@@ -10,12 +10,12 @@ import pandas as pd
 #FOR ANY NEW DATA YOU HAVE TO SPECIFY 5 FILES! 
 #*********************************************
 #INPUT
-flight_data_filename = '../data_base/flight_data/fd_pathv12_camilo.txt'
-path_data_filename = '../data_base/random_paths/path_v12_camilo.txt'
-errorLog_filename = '../data_base/error_logs/errorlog_pathv12_camilo.txt'
+flight_data_filename = '../data_base/flight_data/fd_pathv12_salo.txt'
+path_data_filename = '../data_base/random_paths/path_v12_salo.txt'
+errorLog_filename = '../data_base/error_logs/errorlog_pathv12_salo.txt'
 #OUTPUT
-energy_df_filename = '../data_base/paths_energy/feat_pathv12_camilo_ultimo.csv' #energy_df (where you save the energy and features output)
-totals_df_filename = '../data_base/paths_totals/totalF_pathv12_camilo_ultimo.csv' #totals_df (where you save total (cummulative) output)
+energy_df_filename = '../data_base/paths_energy/feat_pathv12.csv' #energy_df (where you save the energy and features output)
+totals_df_filename = '../data_base/paths_totals/totalF_pathv12.csv' #totals_df (where you save total (cummulative) output)
 #*********************************************
 
 print('Starting features calculation... wait till its done.')
@@ -123,18 +123,21 @@ for idex_path, row_path_specs in path_df.iterrows():
             #TEORICAL velocity in point calculation
             #--------------------------
             teorical_vel = current_point_dist/current_time
-            angle = np.arccos(coordX_new-coordX_old/current_point_dist)
-            teo_Xvel = teorical_vel * np.cos(angle)
-            teo_Yvel = teorical_vel * np.sin(angle)
-            print(coordX_old, coordY_old, '>',coordX_new, coordY_new)
-            print(angle, teo_Xvel, teo_Yvel)
-
+            if (coordX_new - coordX_old) > 0 and (coordY_new - coordY_old) > 0:
+                angle = np.arctan((coordY_new - coordY_old) / (coordX_new - coordX_old) )
+            elif (coordX_new - coordX_old) < 0 and (coordY_new - coordY_old) > 0:
+                angle = np.pi - np.arctan(np.abs((coordY_new - coordY_old) / (coordX_new - coordX_old)) )
+            elif (coordX_new - coordX_old) > 0 and (coordY_new - coordY_old) < 0:
+                angle = - np.arctan(np.abs((coordY_new - coordY_old) / (coordX_new - coordX_old)) )
+            elif (coordX_new - coordX_old) < 0 and (coordY_new - coordY_old) < 0:
+                angle = np.arctan(np.abs((coordY_new - coordY_old) / (coordX_new - coordX_old)) )  - np.pi
+            teo_Xvel = abs(teorical_vel * np.cos(angle))
+            teo_Yvel = abs(teorical_vel * np.sin(angle))
+            
             #Update current X and Y coord
             coordX_old = coordX_new
             coordY_old = coordY_new
 
-            
-            
             #Help us check if current point is in error file. If it is, dont calculate energy.
             error_point = error_df.loc[( error_df['route_num'] == current_path )&(error_df['point'] == current_point )]
             if error_point.empty:
@@ -239,8 +242,8 @@ for idex_path, row_path_specs in path_df.iterrows():
 
                 #Only save those that really used energy.
                 if energy != 0:
-                    new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,sim_point_dist,current_point_Xdist, current_point_Ydist,sim_Xdist,sim_Ydist,avg_error_target_dist,teorical_vel,energy_new, avg_energy]], 
-                                    columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','sim_point_dist','teo_Xdist','teo_Ydist','sim_Xdist','sim_Ydist','avg_error_target_dist','teo_point_vel','Energy','avg_energy'])
+                    new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,sim_point_dist,current_point_Xdist, current_point_Ydist,sim_Xdist,sim_Ydist,avg_error_target_dist,teorical_vel,teo_Xvel, teo_Yvel,energy_new, avg_energy]], 
+                                    columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','sim_point_dist','teo_Xdist','teo_Ydist','sim_Xdist','sim_Ydist','avg_error_target_dist','teo_point_vel','teo_Xvel','teo_Yvel','Energy','avg_energy'])
                     energy_df = energy_df.append(new_df, ignore_index=True)
                     #print(energy_df)
 
