@@ -10,12 +10,12 @@ import pandas as pd
 #FOR ANY NEW DATA YOU HAVE TO SPECIFY 5 FILES! 
 #*********************************************
 #INPUT
-flight_data_filename = '../data_base/flight_data/fd_pathv12_salo.txt'
-path_data_filename = '../data_base/random_paths/path_v12_salo.txt'
-errorLog_filename = '../data_base/error_logs/errorlog_pathv12_salo.txt'
+flight_data_filename = '../data_base/flight_data/fd_pathv13_sebas.txt'
+path_data_filename = '../data_base/random_paths/path_v13_sebas.txt'
+errorLog_filename = '../data_base/error_logs/errorlog_pathv13_sebas.txt'
 #OUTPUT
-energy_df_filename = '../data_base/paths_energy/feat_pathv12.csv' #energy_df (where you save the energy and features output)
-totals_df_filename = '../data_base/paths_totals/totalF_pathv12.csv' #totals_df (where you save total (cummulative) output)
+energy_df_filename = '../data_base/paths_energy/feat_pathv13_TM.csv' #energy_df (where you save the energy and features output)
+totals_df_filename = '../data_base/paths_totals/totalF_pathv13_TM.csv' #totals_df (where you save total (cummulative) output)
 #*********************************************
 
 print('Starting features calculation... wait till its done.')
@@ -146,6 +146,7 @@ for idex_path, row_path_specs in path_df.iterrows():
                 #Computes distance error between drone and target (particle)
                 #--------------------------
                 avg_error_target_dist = current_pathPoint_info['error_target_dist'].mean()
+                avg_tankMass = current_pathPoint_info['tankMass'].mean()
 
                 #Iters through all data in one of the points in flight_data.txt file
                 for index, row_point_specs in current_pathPoint_info.iterrows():
@@ -242,8 +243,8 @@ for idex_path, row_path_specs in path_df.iterrows():
 
                 #Only save those that really used energy.
                 if energy != 0:
-                    new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,sim_point_dist,current_point_Xdist, current_point_Ydist,sim_Xdist,sim_Ydist,avg_error_target_dist,teorical_vel,teo_Xvel, teo_Yvel,energy_new, avg_energy]], 
-                                    columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','sim_point_dist','teo_Xdist','teo_Ydist','sim_Xdist','sim_Ydist','avg_error_target_dist','teo_point_vel','teo_Xvel','teo_Yvel','Energy','avg_energy'])
+                    new_df = pd.DataFrame([[current_path, current_point,current_time,sim_drone_time,current_point_dist,sim_point_dist,current_point_Xdist, current_point_Ydist,sim_Xdist,sim_Ydist,avg_error_target_dist,teorical_vel,teo_Xvel, teo_Yvel,avg_tankMass,energy_new, avg_energy]], 
+                                    columns=['path_num', 'missing_points','teo_point_time', 'sim_drone_time', 'teo_point_dist','sim_point_dist','teo_Xdist','teo_Ydist','sim_Xdist','sim_Ydist','avg_error_target_dist','teo_point_vel','teo_Xvel','teo_Yvel','avg_tankMass','Energy','avg_energy'])
                     energy_df = energy_df.append(new_df, ignore_index=True)
                     #print(energy_df)
 
